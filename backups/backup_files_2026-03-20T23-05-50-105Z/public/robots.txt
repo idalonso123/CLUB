@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://clubviveverde.com
+
+# Sitemaps
+Sitemap: https://clubviveverde.com/sitemap.xml
