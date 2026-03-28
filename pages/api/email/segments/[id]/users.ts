@@ -7,7 +7,8 @@ interface EmailSegment {
   id: number;
   name: string;
   description: string | null;
-  criteria: string;
+  filters?: string;
+  criteria?: string;
   is_active: boolean;
   created_by: number | null;
   created_at: string;
@@ -69,15 +70,28 @@ async function handler(
 
     const segment = segments[0];
 
-    // Parsear los criterios del segmento
+    // Parsear los criterios del segmento - intentar primero 'filters', luego 'criteria'
+    const criteriaData = (segment as any).filters || (segment as any).criteria;
+    
+    if (!criteriaData) {
+      console.error('No se encontraron criterios en el segmento');
+      return res.status(500).json({ success: false, error: 'El segmento no tiene filtros definidos' });
+    }
+
     let filters: EmailSegmentFilters;
     try {
-      filters = typeof segment.criteria === 'string' 
-        ? JSON.parse(segment.criteria) 
-        : segment.criteria;
+      filters = typeof criteriaData === 'string' 
+        ? JSON.parse(criteriaData) 
+        : criteriaData;
     } catch (parseError) {
       console.error('Error al parsear criterios del segmento:', parseError);
       return res.status(500).json({ success: false, error: 'Error al leer los filtros del segmento' });
+    }
+
+    // Verificar que los filtros se parsearon correctamente
+    if (!filters || typeof filters !== 'object') {
+      console.error('Los criterios del segmento no son válidos:', criteriaData);
+      return res.status(500).json({ success: false, error: 'Los filtros del segmento están corruptos' });
     }
 
     // Obtener parámetros de paginación

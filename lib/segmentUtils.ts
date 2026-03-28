@@ -51,6 +51,12 @@ interface QueryResult {
  * @returns Objeto con la consulta SQL, parámetros y joins necesarios
  */
 export function buildSegmentQuery(filters: EmailSegmentFilters): QueryResult {
+  // Manejar el caso en que filters es undefined o null
+  if (!filters) {
+    console.warn('buildSegmentQuery recibió filtros undefined o null');
+    filters = {};
+  }
+
   const params: (string | number | boolean)[] = [];
   const joins: string[] = [];
   const conditions: string[] = [];
@@ -217,6 +223,12 @@ export function buildSegmentQuery(filters: EmailSegmentFilters): QueryResult {
  * @returns Objeto con la consulta SQL de conteo y parámetros
  */
 export function buildSegmentCountQuery(filters: EmailSegmentFilters): { query: string; params: (string | number | boolean)[] } {
+  // Manejar el caso en que filters es undefined o null
+  if (!filters) {
+    console.warn('buildSegmentCountQuery recibió filtros undefined o null');
+    filters = {};
+  }
+
   const params: (string | number | boolean)[] = [];
   const joins: string[] = [];
   const conditions: string[] = [];
@@ -370,6 +382,11 @@ export function buildSegmentCountQuery(filters: EmailSegmentFilters): { query: s
  * @returns Texto legible describiendo los filtros
  */
 export function getFilterPreview(filters: EmailSegmentFilters): string {
+  // Manejar el caso en que filters es undefined o null
+  if (!filters) {
+    return 'Todos los usuarios';
+  }
+
   const parts: string[] = [];
   
   if (filters.name_contains) {

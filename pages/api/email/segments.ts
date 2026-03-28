@@ -6,9 +6,10 @@ interface EmailSegment {
   id: number;
   name: string;
   description: string | null;
-  filters: string;
-  query_preview: string | null;
-  estimated_count: number;
+  filters?: string; // Campo principal en la BD
+  criteria?: string; // Campo alternativo (legacy)
+  query_preview?: string | null;
+  estimated_count?: number;
   is_active: boolean;
   created_by: number | null;
   created_at: string;
@@ -56,12 +57,23 @@ async function handler(
 
   if (req.method === 'POST') {
     try {
-      const { name, description, criteria, is_active = true } = req.body;
+      const { name, description, filters, is_active = true } = req.body;
 
-      if (!name || !criteria) {
+      // Validación: el nombre es obligatorio
+      if (!name || name.trim() === '') {
         return res.status(400).json({
           success: false,
-          error: 'Faltan campos requeridos: name, criteria'
+          error: 'El nombre del segmento es obligatorio'
+        });
+      }
+
+      // Usar 'filters' si viene, o 'criteria' como alternativa (compatibilidad hacia atrás)
+      const filterData = filters || (req.body as any).criteria;
+
+      if (!filterData) {
+        return res.status(400).json({
+          success: false,
+          error: 'Se requieren filtros para crear el segmento'
         });
       }
 
@@ -75,7 +87,7 @@ async function handler(
         values: [
           name,
           description || null,
-          typeof criteria === 'string' ? criteria : JSON.stringify(criteria),
+          typeof filterData === 'string' ? filterData : JSON.stringify(filterData),
           is_active,
           req.user?.userId
         ]

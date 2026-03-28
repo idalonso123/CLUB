@@ -6,7 +6,8 @@ interface EmailSegment {
   id: number;
   name: string;
   description: string | null;
-  criteria: string;
+  filters?: string;
+  criteria?: string;
   is_active: boolean;
   created_by: number | null;
   created_at: string;
@@ -53,18 +54,29 @@ async function handler(
 
   if (req.method === 'PUT') {
     try {
-      const { name, description, criteria, is_active } = req.body;
+      const { name, description, filters, is_active } = req.body;
 
-      if (!name || !criteria) {
+      // Validación: el nombre es obligatorio
+      if (!name || name.trim() === '') {
         return res.status(400).json({
           success: false,
-          error: 'Faltan campos requeridos: name, criteria'
+          error: 'El nombre del segmento es obligatorio'
+        });
+      }
+
+      // Usar 'filters' si viene, o 'criteria' como alternativa (compatibilidad hacia atrás)
+      const filterData = filters || (req.body as any).criteria;
+
+      if (!filterData) {
+        return res.status(400).json({
+          success: false,
+          error: 'Se requieren filtros para actualizar el segmento'
         });
       }
 
       const query = `
         UPDATE email_segments
-        SET name = ?, description = ?, criteria = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
+        SET name = ?, description = ?, filters = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `;
 
@@ -73,7 +85,7 @@ async function handler(
         values: [
           name,
           description || null,
-          typeof criteria === 'string' ? criteria : JSON.stringify(criteria),
+          typeof filterData === 'string' ? filterData : JSON.stringify(filterData),
           is_active ?? true,
           id
         ]

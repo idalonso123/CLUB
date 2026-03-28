@@ -340,7 +340,7 @@ const EmailSection: React.FC = () => {
       const res = await fetch(`/api/email/segments/${segment.id}/users?limit=10000`);
       const data = await res.json();
       
-      if (data.success && data.users) {
+      if (data.success && data.users && data.users.length > 0) {
         // Crear CSV
         const headers = ['Código', 'Nombre', 'Apellidos', 'Email', 'Teléfono', 'Puntos', 'Fecha Registro'];
         const csvContent = [
@@ -368,11 +368,14 @@ const EmailSection: React.FC = () => {
         URL.revokeObjectURL(url);
         
         toast.success(`Descargados ${data.users.length} usuarios`, { id: 'download' });
+      } else if (data.success && (!data.users || data.users.length === 0)) {
+        toast.error('No hay usuarios en este segmento', { id: 'download' });
       } else {
-        toast.error('Error al obtener usuarios', { id: 'download' });
+        toast.error(data.error || 'Error al obtener usuarios del segmento', { id: 'download' });
       }
     } catch (error) {
-      toast.error('Error al descargar usuarios', { id: 'download' });
+      console.error('Error al descargar usuarios:', error);
+      toast.error('Error al descargar usuarios. Inténtalo de nuevo.', { id: 'download' });
     }
   };
 
@@ -481,17 +484,89 @@ const EmailSection: React.FC = () => {
   };
 
   const handleSaveSegment = async () => {
+    // Validación: el nombre es obligatorio
+    if (!segmentForm.name || segmentForm.name.trim() === '') {
+      toast.error('⚠️ El nombre del segmento es obligatorio. Por favor, introduce un nombre para guardar el segmento.', {
+        duration: 5000,
+        style: {
+          background: '#FEF2F2',
+          color: '#991B1B',
+          border: '1px solid #FECACA',
+          padding: '16px',
+        },
+      });
+      return;
+    }
+
+    // Validación de rangos de fechas y números
+    const errors: string[] = [];
+
+    // Rango de fechas de nacimiento
+    if (segmentForm.filters.birth_date_from && segmentForm.filters.birth_date_to) {
+      if (segmentForm.filters.birth_date_to < segmentForm.filters.birth_date_from) {
+        errors.push('⚠️ La fecha de nacimiento "Hasta" no puede ser menor que "Desde"');
+      }
+    }
+
+    // Rango de fechas de registro
+    if (segmentForm.filters.registration_date_from && segmentForm.filters.registration_date_to) {
+      if (segmentForm.filters.registration_date_to < segmentForm.filters.registration_date_from) {
+        errors.push('⚠️ La fecha de registro "Hasta" no puede ser menor que "Desde"');
+      }
+    }
+
+    // Rango de puntos - solo validar si ambos tienen valor numérico
+    const pointsMinVal = segmentForm.filters.points_min;
+    const pointsMaxVal = segmentForm.filters.points_max;
+    const pointsMinNum = typeof pointsMinVal === 'number' && !isNaN(pointsMinVal) ? pointsMinVal : null;
+    const pointsMaxNum = typeof pointsMaxVal === 'number' && !isNaN(pointsMaxVal) ? pointsMaxVal : null;
+    if (pointsMinNum !== null && pointsMaxNum !== null && pointsMaxNum < pointsMinNum) {
+      errors.push('⚠️ El puntos máximo no puede ser menor que el puntos mínimo');
+    }
+
+    // Rango de cifra de ventas
+    const salesMinVal = segmentForm.filters.sales_amount_min;
+    const salesMaxVal = segmentForm.filters.sales_amount_max;
+    const salesMinNum = typeof salesMinVal === 'number' && !isNaN(salesMinVal) ? salesMinVal : null;
+    const salesMaxNum = typeof salesMaxVal === 'number' && !isNaN(salesMaxVal) ? salesMaxVal : null;
+    if (salesMinNum !== null && salesMaxNum !== null && salesMaxNum < salesMinNum) {
+      errors.push('⚠️ La cifra máxima de ventas no puede ser menor que la mínima');
+    }
+
+    // Rango de días de inactividad
+    const inactMinVal = segmentForm.filters.inactivity_days_min;
+    const inactMaxVal = segmentForm.filters.inactivity_days_max;
+    const inactMinNum = typeof inactMinVal === 'number' && !isNaN(inactMinVal) ? inactMinVal : null;
+    const inactMaxNum = typeof inactMaxVal === 'number' && !isNaN(inactMaxVal) ? inactMaxVal : null;
+    if (inactMinNum !== null && inactMaxNum !== null && inactMaxNum < inactMinNum) {
+      errors.push('⚠️ El máximo de días de inactividad no puede ser menor que el mínimo');
+    }
+
+    if (errors.length > 0) {
+      toast.error(errors.join('\n'), {
+        duration: 5000,
+        style: {
+          background: '#FEF2F2',
+          color: '#991B1B',
+          border: '1px solid #FECACA',
+          padding: '16px',
+          whiteSpace: 'pre-line',
+        },
+      });
+      return;
+    }
+
     try {
       const url = editingSegment
         ? `/api/email/segments/${editingSegment.id}`
         : '/api/email/segments';
       const method = editingSegment ? 'PUT' : 'POST';
 
-      // Preparar datos con filtros como JSON - usando 'criteria' para la API
+      // Preparar datos con filtros como JSON - usando 'filters' para coincidir con la base de datos
       const segmentData = {
         name: segmentForm.name,
         description: segmentForm.description,
-        criteria: segmentForm.filters,
+        filters: segmentForm.filters,
         is_active: segmentForm.is_active
       };
 
@@ -692,20 +767,26 @@ const EmailSection: React.FC = () => {
 
   const openEditSegment = (segment: EmailSegment) => {
     setEditingSegment(segment);
+    
+    // El campo puede llamarse 'filters' o 'criteria' dependiendo de la base de datos
+    const criteriaOrFilters = (segment as any).filters || (segment as any).criteria;
+    
     // Parsear criterios si vienen como string
-    let parsedCriteria: EmailSegmentFilters;
-    if (typeof segment.criteria === 'string') {
-      try {
-        parsedCriteria = JSON.parse(segment.criteria);
-      } catch {
-        // Si no es JSON válido, usar filtros vacíos
-        parsedCriteria = {};
+    let parsedCriteria: EmailSegmentFilters = {};
+    if (criteriaOrFilters) {
+      if (typeof criteriaOrFilters === 'string') {
+        try {
+          parsedCriteria = JSON.parse(criteriaOrFilters);
+        } catch {
+          // Si no es JSON válido, usar filtros vacíos
+          parsedCriteria = {};
+        }
+      } else {
+        parsedCriteria = criteriaOrFilters as EmailSegmentFilters;
       }
-    } else {
-      parsedCriteria = segment.criteria as EmailSegmentFilters;
     }
     
-    // Normalizar los valores para el formulario (convertir undefined a strings vacíos)
+    // Normalizar los valores para el formulario (convertir undefined/null a strings vacíos)
     const normalizedFilters = {
       name_contains: parsedCriteria.name_contains || '',
       email_contains: parsedCriteria.email_contains || '',
@@ -715,17 +796,17 @@ const EmailSection: React.FC = () => {
       birth_date_to: parsedCriteria.birth_date_to || '',
       registration_date_from: parsedCriteria.registration_date_from || '',
       registration_date_to: parsedCriteria.registration_date_to || '',
-      points_min: parsedCriteria.points_min,
-      points_max: parsedCriteria.points_max,
-      sales_amount_min: parsedCriteria.sales_amount_min,
-      sales_amount_max: parsedCriteria.sales_amount_max,
-      sales_days: parsedCriteria.sales_days,
-      inactivity_days_min: parsedCriteria.inactivity_days_min,
-      inactivity_days_max: parsedCriteria.inactivity_days_max,
+      points_min: parsedCriteria.points_min ?? undefined,
+      points_max: parsedCriteria.points_max ?? undefined,
+      sales_amount_min: parsedCriteria.sales_amount_min ?? undefined,
+      sales_amount_max: parsedCriteria.sales_amount_max ?? undefined,
+      sales_days: parsedCriteria.sales_days ?? undefined,
+      inactivity_days_min: parsedCriteria.inactivity_days_min ?? undefined,
+      inactivity_days_max: parsedCriteria.inactivity_days_max ?? undefined,
       housing_types: parsedCriteria.housing_types || [],
       animal_types: parsedCriteria.animal_types || [],
       rol: parsedCriteria.rol || [],
-      email_subscribed: parsedCriteria.email_subscribed || 'all',
+      email_subscribed: (parsedCriteria as any).email_subscribed || 'all',
     };
     
     setSegmentForm({
@@ -1788,7 +1869,9 @@ const EmailSection: React.FC = () => {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre del segmento</label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Nombre del segmento <span className="text-red-500">*</span>
+                      </label>
                       <input
                         type="text"
                         value={segmentForm.name}
