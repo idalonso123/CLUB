@@ -6,7 +6,6 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import RewardsProvider from "@/components/Admin/RewardsProvider";
 import MainPageProvider from "@/components/Admin/MainPageProvider";
 import GoogleAnalytics from "@/components/HomePages/GoogleAnalytics";
-import { Toaster } from "react-hot-toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,30 +22,6 @@ export default function App({ Component, pageProps }: AppProps) {
   return (
     <div className={`${geistSans.variable} ${geistMono.variable}`}>
       <GoogleAnalytics measurementId={GA_MEASUREMENT_ID} />
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 4000,
-          style: {
-            background: '#363636',
-            color: '#fff',
-            borderRadius: '8px',
-            padding: '16px',
-          },
-          success: {
-            iconTheme: {
-              primary: '#10B981',
-              secondary: '#fff',
-            },
-          },
-          error: {
-            iconTheme: {
-              primary: '#EF4444',
-              secondary: '#fff',
-            },
-          },
-        }}
-      />
       <AuthProvider>
         <RewardsProvider>
           <MainPageProvider>
