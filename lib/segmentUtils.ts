@@ -46,6 +46,90 @@ interface QueryResult {
 }
 
 /**
+ * Valida que una fecha tenga el formato correcto AAAA-MM-DD con año de exactamente 4 dígitos
+ * @param dateStr - Cadena de fecha a validar
+ * @returns true si es válida, false en caso contrario
+ */
+function isValidDateFormat(dateStr: string | undefined | null): boolean {
+  if (!dateStr || dateStr === '') return true; // Vacío es válido (opcional)
+  
+  // Verificar formato AAAA-MM-DD con año de exactamente 4 dígitos
+  const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+  if (!datePattern.test(dateStr)) return false;
+  
+  // Verificar que el año tenga exactamente 4 dígitos (1000-9999)
+  const year = parseInt(dateStr.substring(0, 4), 10);
+  if (year < 1000 || year > 9999) return false;
+  
+  // Verificar que sea una fecha válida (año, mes, día coherentes)
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return false;
+  
+  // Verificar que la fecha parseada coincida con la entrada (para detectar meses/días inválidos)
+  const [yearStr, monthStr, dayStr] = dateStr.split('-');
+  if (
+    date.getFullYear() !== parseInt(yearStr, 10) ||
+    date.getMonth() + 1 !== parseInt(monthStr, 10) ||
+    date.getDate() !== parseInt(dayStr, 10)
+  ) {
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Valida los filtros de segmento antes de construir la consulta
+ * @param filters - Filtros a validar
+ * @returns true si los filtros son válidos, false en caso contrario
+ */
+export function validateSegmentFilters(filters: EmailSegmentFilters): { valid: boolean; error?: string } {
+  if (!filters) {
+    return { valid: true }; // Filtros vacíos son válidos
+  }
+  
+  // Validar que ambos campos de fecha de nacimiento estén preenchidos o ninguno
+  const birthDateFromFilled = filters.birth_date_from && filters.birth_date_from.trim() !== '';
+  const birthDateToFilled = filters.birth_date_to && filters.birth_date_to.trim() !== '';
+  if (birthDateFromFilled !== birthDateToFilled) {
+    return {
+      valid: false,
+      error: 'El rango de fechas de nacimiento está incompleto: debe rellenar tanto la fecha "Desde" como la fecha "Hasta", o dejar ambas vacías.'
+    };
+  }
+  
+  // Validar que ambos campos de fecha de registro estén preenchidos o ninguno
+  const regDateFromFilled = filters.registration_date_from && filters.registration_date_from.trim() !== '';
+  const regDateToFilled = filters.registration_date_to && filters.registration_date_to.trim() !== '';
+  if (regDateFromFilled !== regDateToFilled) {
+    return {
+      valid: false,
+      error: 'El rango de fechas de registro está incompleto: debe rellenar tanto la fecha "Desde" como la fecha "Hasta", o dejar ambas vacías.'
+    };
+  }
+  
+  // Validar formato de fechas
+  const dateFields = [
+    { field: 'registration_date_from', label: 'Fecha de registro (Desde)' },
+    { field: 'registration_date_to', label: 'Fecha de registro (Hasta)' },
+    { field: 'birth_date_from', label: 'Fecha de nacimiento (Desde)' },
+    { field: 'birth_date_to', label: 'Fecha de nacimiento (Hasta)' },
+  ];
+  
+  for (const { field, label } of dateFields) {
+    const value = (filters as any)[field];
+    if (value && !isValidDateFormat(value)) {
+      return {
+        valid: false,
+        error: `El formato de ${label} es incorrecto. Debe ser AAAA-MM-DD con un año de exactamente 4 dígitos (ej: 2024-01-15). Valor recibido: "${value}"`
+      };
+    }
+  }
+  
+  return { valid: true };
+}
+
+/**
  * Construye una consulta SQL dinámica para obtener usuarios basándose en los filtros del segmento
  * @param filters - Objeto con los filtros del segmento
  * @returns Objeto con la consulta SQL, parámetros y joins necesarios
@@ -55,6 +139,12 @@ export function buildSegmentQuery(filters: EmailSegmentFilters): QueryResult {
   if (!filters) {
     console.warn('buildSegmentQuery recibió filtros undefined o null');
     filters = {};
+  }
+
+  // Validar fechas antes de construir la consulta
+  const validation = validateSegmentFilters(filters);
+  if (!validation.valid) {
+    throw new Error(validation.error || 'Formato de fecha inválido');
   }
 
   const params: (string | number | boolean)[] = [];
@@ -227,6 +317,12 @@ export function buildSegmentCountQuery(filters: EmailSegmentFilters): { query: s
   if (!filters) {
     console.warn('buildSegmentCountQuery recibió filtros undefined o null');
     filters = {};
+  }
+
+  // Validar fechas antes de construir la consulta
+  const validation = validateSegmentFilters(filters);
+  if (!validation.valid) {
+    throw new Error(validation.error || 'Formato de fecha inválido');
   }
 
   const params: (string | number | boolean)[] = [];

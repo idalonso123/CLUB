@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth, AuthenticatedRequest } from '@/middleware/authMiddleware';
 import executeQuery from '../../../../lib/db';
+import { validateSegmentFilters, EmailSegmentFilters } from '@/lib/segmentUtils';
 
 interface EmailSegment {
   id: number;
@@ -71,6 +72,28 @@ async function handler(
         return res.status(400).json({
           success: false,
           error: 'Se requieren filtros para actualizar el segmento'
+        });
+      }
+
+      // Parsear filtros si es string
+      let parsedFilters: EmailSegmentFilters;
+      try {
+        parsedFilters = typeof filterData === 'string' 
+          ? JSON.parse(filterData) 
+          : filterData;
+      } catch (parseError) {
+        return res.status(400).json({
+          success: false,
+          error: 'Formato de filtros inválido'
+        });
+      }
+
+      // Validar formato de fechas
+      const validation = validateSegmentFilters(parsedFilters);
+      if (!validation.valid) {
+        return res.status(400).json({
+          success: false,
+          error: validation.error
         });
       }
 

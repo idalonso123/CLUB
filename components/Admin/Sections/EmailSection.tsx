@@ -5,6 +5,30 @@ import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import WysiwygEditor, { AVAILABLE_VARIABLES } from '../Common/WysiwygEditor';
 
+// Función para sanitizar entrada de fecha y prevenir años de más de 4 dígitos
+const sanitizeDateInput = (value: string): string => {
+  // Solo permitir dígitos y guiones
+  let sanitized = value.replace(/[^\d-]/g, '');
+  
+  // Si tiene más de 10 caracteres (AAAA-MM-DD = 10), truncar
+  if (sanitized.length > 10) {
+    sanitized = sanitized.substring(0, 10);
+  }
+  
+  // Asegurar formato AAAA-MM-DD
+  // Primero 4 dígitos son el año
+  if (sanitized.length >= 4 && !sanitized.includes('-')) {
+    sanitized = sanitized.substring(0, 4) + '-' + sanitized.substring(4);
+  }
+  
+  // Limitar mes a 2 dígitos
+  if (sanitized.length >= 7 && sanitized.split('-').length <= 2) {
+    sanitized = sanitized.substring(0, 4) + '-' + sanitized.substring(4, 6) + '-' + sanitized.substring(6, 8);
+  }
+  
+  return sanitized;
+};
+
 interface EmailTemplate {
   id: number;
   name: string;
@@ -214,6 +238,25 @@ const EmailSection: React.FC = () => {
       email_subscribed: 'all' as 'all' | 'subscribed' | 'unsubscribed',
     }
   });
+
+  // Función para validar formato de fecha AAAA-MM-DD (año de exactamente 4 dígitos)
+  const isValidDateFormat = (dateStr: string): boolean => {
+    if (!dateStr || dateStr === '') return true; // Vacío es válido (opcional)
+    
+    // Verificar formato AAAA-MM-DD con año de exactamente 4 dígitos
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+    if (!datePattern.test(dateStr)) return false;
+    
+    // Verificar que sea una fecha válida
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return false;
+    
+    // Verificar que el año tenga exactamente 4 dígitos (1000-9999)
+    const year = parseInt(dateStr.substring(0, 4), 10);
+    if (year < 1000 || year > 9999) return false;
+    
+    return true;
+  };
 
   const resetSegmentForm = () => {
     setSegmentForm({
@@ -500,6 +543,36 @@ const EmailSection: React.FC = () => {
 
     // Validación de rangos de fechas y números
     const errors: string[] = [];
+
+    // Validar que ambos campos de fecha de nacimiento estén preenchidos o ninguno
+    const birthDateFromFilled = segmentForm.filters.birth_date_from && segmentForm.filters.birth_date_from.trim() !== '';
+    const birthDateToFilled = segmentForm.filters.birth_date_to && segmentForm.filters.birth_date_to.trim() !== '';
+    if (birthDateFromFilled !== birthDateToFilled) {
+      errors.push('• El rango de fechas de nacimiento está incompleto: debe rellenar tanto la fecha "Desde" como la fecha "Hasta", o dejar ambas vacías.');
+    }
+
+    // Validar que ambos campos de fecha de registro estén preenchidos o ninguno
+    const regDateFromFilled = segmentForm.filters.registration_date_from && segmentForm.filters.registration_date_from.trim() !== '';
+    const regDateToFilled = segmentForm.filters.registration_date_to && segmentForm.filters.registration_date_to.trim() !== '';
+    if (regDateFromFilled !== regDateToFilled) {
+      errors.push('• El rango de fechas de registro está incompleto: debe rellenar tanto la fecha "Desde" como la fecha "Hasta", o dejar ambas vacías.');
+    }
+
+    // Validar formato de fechas de nacimiento
+    if (segmentForm.filters.birth_date_from && !isValidDateFormat(segmentForm.filters.birth_date_from)) {
+      errors.push('• El formato de la fecha de nacimiento "Desde" es incorrecto. Debe ser AAAA-MM-DD con un año de 4 dígitos (ej: 2000-01-15).');
+    }
+    if (segmentForm.filters.birth_date_to && !isValidDateFormat(segmentForm.filters.birth_date_to)) {
+      errors.push('• El formato de la fecha de nacimiento "Hasta" es incorrecto. Debe ser AAAA-MM-DD con un año de 4 dígitos (ej: 2024-12-31).');
+    }
+
+    // Validar formato de fechas de registro
+    if (segmentForm.filters.registration_date_from && !isValidDateFormat(segmentForm.filters.registration_date_from)) {
+      errors.push('• El formato de la fecha de registro "Desde" es incorrecto. Debe ser AAAA-MM-DD con un año de 4 dígitos (ej: 2020-01-01).');
+    }
+    if (segmentForm.filters.registration_date_to && !isValidDateFormat(segmentForm.filters.registration_date_to)) {
+      errors.push('• El formato de la fecha de registro "Hasta" es incorrecto. Debe ser AAAA-MM-DD con un año de 4 dígitos (ej: 2024-12-31).');
+    }
 
     // Rango de fechas de nacimiento
     if (segmentForm.filters.birth_date_from && segmentForm.filters.birth_date_to) {
@@ -2005,7 +2078,7 @@ const EmailSection: React.FC = () => {
                         <input
                           type="date"
                           value={segmentForm.filters.birth_date_from}
-                          onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, birth_date_from: e.target.value } })}
+                          onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, birth_date_from: sanitizeDateInput(e.target.value) } })}
                           className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
                             segmentForm.filters.birth_date_from && segmentForm.filters.birth_date_to &&
                             segmentForm.filters.birth_date_from > segmentForm.filters.birth_date_to
@@ -2019,7 +2092,7 @@ const EmailSection: React.FC = () => {
                         <input
                           type="date"
                           value={segmentForm.filters.birth_date_to}
-                          onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, birth_date_to: e.target.value } })}
+                          onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, birth_date_to: sanitizeDateInput(e.target.value) } })}
                           className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
                             segmentForm.filters.birth_date_from && segmentForm.filters.birth_date_to &&
                             segmentForm.filters.birth_date_from > segmentForm.filters.birth_date_to
@@ -2209,7 +2282,7 @@ const EmailSection: React.FC = () => {
                       <input
                         type="date"
                         value={segmentForm.filters.registration_date_from}
-                        onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, registration_date_from: e.target.value } })}
+                        onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, registration_date_from: sanitizeDateInput(e.target.value) } })}
                         className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
                           segmentForm.filters.registration_date_from && segmentForm.filters.registration_date_to &&
                           segmentForm.filters.registration_date_from > segmentForm.filters.registration_date_to
@@ -2223,7 +2296,7 @@ const EmailSection: React.FC = () => {
                       <input
                         type="date"
                         value={segmentForm.filters.registration_date_to}
-                        onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, registration_date_to: e.target.value } })}
+                        onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, registration_date_to: sanitizeDateInput(e.target.value) } })}
                         className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
                           segmentForm.filters.registration_date_from && segmentForm.filters.registration_date_to &&
                           segmentForm.filters.registration_date_from > segmentForm.filters.registration_date_to

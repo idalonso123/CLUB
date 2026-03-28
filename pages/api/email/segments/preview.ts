@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { withAuth, AuthenticatedRequest } from '@/middleware/authMiddleware';
 import executeQuery from '@/lib/db';
-import { buildSegmentCountQuery, buildSegmentQuery, getFilterPreview, EmailSegmentFilters } from '@/lib/segmentUtils';
+import { buildSegmentCountQuery, buildSegmentQuery, getFilterPreview, EmailSegmentFilters, validateSegmentFilters } from '@/lib/segmentUtils';
 
 interface ApiResponse {
   success: boolean;
@@ -44,6 +44,15 @@ async function handler(
       return res.status(400).json({ 
         success: false, 
         error: 'Formato de filtros inválido' 
+      });
+    }
+
+    // Validar formato de fechas antes de construir la consulta
+    const validation = validateSegmentFilters(parsedFilters);
+    if (!validation.valid) {
+      return res.status(400).json({ 
+        success: false, 
+        error: validation.error 
       });
     }
 
