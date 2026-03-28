@@ -11,7 +11,7 @@ interface ConfigModalProps {
 
 const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose }) => {
   // Estado para controlar las pestañas
-  const [activeTab, setActiveTab] = useState('points'); // 'points' o 'rewards'
+  const [activeTab, setActiveTab] = useState('points'); // 'points', 'rewards' o 'expiration'
   
   // Usar el hook de configuración
   const { 
@@ -217,6 +217,16 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose }) => {
                 >
                   <i className="fas fa-gift mr-1 sm:mr-2"></i>
                   <span>Recompensas</span>
+                </button>
+                <button
+                  type="button"
+                  className={`px-3 sm:px-6 py-2 sm:py-2.5 text-sm sm:text-base font-medium inline-flex items-center whitespace-nowrap transition-colors duration-200 flex-1 sm:flex-none justify-center sm:justify-start ${activeTab === 'expiration' 
+                    ? 'text-green-800 border-b-2 border-green-800' 
+                    : 'text-gray-500 hover:text-gray-700 border-b-2 border-transparent'}`}
+                  onClick={() => setActiveTab('expiration')}
+                >
+                  <i className="fas fa-clock mr-1 sm:mr-2"></i>
+                  <span>Caducidades</span>
                 </button>
               </div>
             </div>
@@ -610,6 +620,448 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose }) => {
                       )}
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Contenido de la pestaña de Caducidades */}
+            {activeTab === 'expiration' && (
+              <div>
+                {/* Header explicativo */}
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-4 rounded-lg border border-amber-100 shadow-sm">
+                  <h3 className="text-sm font-semibold text-amber-800 flex items-center mb-2">
+                    <i className="fas fa-exclamation-triangle mr-2"></i>
+                    Configuración de Caducidades
+                  </h3>
+                  <p className="text-xs text-amber-700">
+                    Configura el tiempo de caducidad para puntos y carnets de mascota. 
+                    <strong> Al cambiar estos valores se actualizarán TODOS los registros existentes</strong> (Opción B).
+                    Cada punto ganado tiene su propia fecha de caducidad calculada desde la fecha de obtención.
+                  </p>
+                </div>
+
+                {/* Configuración de caducidad de puntos por antigüedad */}
+                <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm mt-4">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="caducidad_puntos_meses" className="block text-sm font-medium text-gray-700 flex items-center">
+                      <i className="fas fa-coins mr-2 text-amber-600"></i>
+                      Caducidad de Puntos
+                    </label>
+                    <span className="text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-800 font-medium shadow-sm">
+                      Sistema de Puntos
+                    </span>
+                  </div>
+
+                  <div className="bg-amber-50 p-3 rounded-lg border border-amber-100 mt-3 mb-3">
+                    <p className="text-xs text-amber-700">
+                      Define cuántos meses duran los puntos antes de caducar. Los puntos de cada usuario tienen su propia fecha de caducidad a partir de cuando se obtienen.
+                    </p>
+                  </div>
+                  
+                  {/* Control numérico mejorado */}
+                  <div className="space-y-4 mt-3">
+                    <div className="flex items-center">
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            caducidad_puntos_meses: Math.max(1, config.expiration.caducidad_puntos_meses - 1) 
+                          }
+                        })}
+                        className="px-2 py-2 bg-gray-100 rounded-l-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 border border-gray-300"
+                        whileHover={{ backgroundColor: "#e5e7eb" }}
+                        whileTap={{ scale: 0.95 }}
+                        disabled={config.expiration.caducidad_puntos_meses <= 1}
+                      >
+                        <i className="fas fa-minus text-gray-600"></i>
+                      </motion.button>
+                      <input
+                        type="number"
+                        id="caducidad_puntos_meses"
+                        name="caducidad_puntos_meses"
+                        value={config.expiration.caducidad_puntos_meses}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (!isNaN(value) && value >= 1) {
+                            updateConfig({ 
+                              expiration: { 
+                                ...config.expiration, 
+                                caducidad_puntos_meses: value 
+                              }
+                            });
+                          }
+                        }}
+                        step="1"
+                        min="1"
+                        className="block w-full px-3 py-2 border border-gray-300 text-center focus:outline-none focus:ring-amber-500 focus:border-amber-500 sm:text-sm"
+                      />
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            caducidad_puntos_meses: config.expiration.caducidad_puntos_meses + 1 
+                          }
+                        })}
+                        className="px-2 py-2 bg-gray-100 rounded-r-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-500 border border-gray-300"
+                        whileHover={{ backgroundColor: "#e5e7eb" }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <i className="fas fa-plus text-gray-600"></i>
+                      </motion.button>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2">
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            caducidad_puntos_meses: 6 
+                          }
+                        })}
+                        className={`px-2 py-1 rounded text-xs font-medium ${config.expiration.caducidad_puntos_meses === 6 ? 'bg-amber-600 text-white border-amber-700' : 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200'}`}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        6 meses
+                      </motion.button>
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            caducidad_puntos_meses: 12 
+                          }
+                        })}
+                        className={`px-2 py-1 rounded text-xs font-medium ${config.expiration.caducidad_puntos_meses === 12 ? 'bg-amber-600 text-white border-amber-700' : 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200'}`}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        12 meses
+                      </motion.button>
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            caducidad_puntos_meses: 18 
+                          }
+                        })}
+                        className={`px-2 py-1 rounded text-xs font-medium ${config.expiration.caducidad_puntos_meses === 18 ? 'bg-amber-600 text-white border-amber-700' : 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200'}`}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        18 meses
+                      </motion.button>
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            caducidad_puntos_meses: 24 
+                          }
+                        })}
+                        className={`px-2 py-1 rounded text-xs font-medium ${config.expiration.caducidad_puntos_meses === 24 ? 'bg-amber-600 text-white border-amber-700' : 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200'}`}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        24 meses
+                      </motion.button>
+                    </div>
+                  </div>
+
+                  {/* Ejemplo visual */}
+                  <div className="mt-4 text-sm">
+                    <div className="flex justify-between items-center p-3 rounded-md bg-amber-50 text-amber-800 shadow-sm">
+                      <span className="flex items-center">
+                        <i className="fas fa-lightbulb mr-2 text-amber-600"></i>
+                        Ejemplo:
+                      </span>
+                      <span className="font-medium bg-white bg-opacity-50 px-2 py-1 rounded-md">
+                        Puntos obtenidos hoy caducan el {new Date(Date.now() + config.expiration.caducidad_puntos_meses * 30 * 24 * 60 * 60 * 1000).toLocaleDateString('es-ES')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Configuración de caducidad de carnet por inactividad */}
+                <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm mt-4">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="caducidad_carnet_inactividad_meses" className="block text-sm font-medium text-gray-700 flex items-center">
+                      <i className="fas fa-paw mr-2 text-orange-600"></i>
+                      Caducidad Carnet (Inactividad)
+                    </label>
+                    <span className="text-xs px-3 py-1 rounded-full bg-orange-100 text-orange-800 font-medium shadow-sm">
+                      Carnets Mascota
+                    </span>
+                  </div>
+
+                  <div className="bg-orange-50 p-3 rounded-lg border border-orange-100 mt-3 mb-3">
+                    <p className="text-xs text-orange-700">
+                      Define cuántos meses tiene el usuario para añadir un nuevo sello antes de que el carnet caduque por inactividad. El temporizador se reinicia con cada sello.
+                    </p>
+                  </div>
+                  
+                  {/* Control numérico mejorado */}
+                  <div className="space-y-4 mt-3">
+                    <div className="flex items-center">
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            caducidad_carnet_inactividad_meses: Math.max(1, config.expiration.caducidad_carnet_inactividad_meses - 1) 
+                          }
+                        })}
+                        className="px-2 py-2 bg-gray-100 rounded-l-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 border border-gray-300"
+                        whileHover={{ backgroundColor: "#e5e7eb" }}
+                        whileTap={{ scale: 0.95 }}
+                        disabled={config.expiration.caducidad_carnet_inactividad_meses <= 1}
+                      >
+                        <i className="fas fa-minus text-gray-600"></i>
+                      </motion.button>
+                      <input
+                        type="number"
+                        id="caducidad_carnet_inactividad_meses"
+                        name="caducidad_carnet_inactividad_meses"
+                        value={config.expiration.caducidad_carnet_inactividad_meses}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (!isNaN(value) && value >= 1) {
+                            updateConfig({ 
+                              expiration: { 
+                                ...config.expiration, 
+                                caducidad_carnet_inactividad_meses: value 
+                              }
+                            });
+                          }
+                        }}
+                        step="1"
+                        min="1"
+                        className="block w-full px-3 py-2 border border-gray-300 text-center focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
+                      />
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            caducidad_carnet_inactividad_meses: config.expiration.caducidad_carnet_inactividad_meses + 1 
+                          }
+                        })}
+                        className="px-2 py-2 bg-gray-100 rounded-r-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 border border-gray-300"
+                        whileHover={{ backgroundColor: "#e5e7eb" }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <i className="fas fa-plus text-gray-600"></i>
+                      </motion.button>
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2">
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            caducidad_carnet_inactividad_meses: 3 
+                          }
+                        })}
+                        className={`px-2 py-1 rounded text-xs font-medium ${config.expiration.caducidad_carnet_inactividad_meses === 3 ? 'bg-orange-600 text-white border-orange-700' : 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200'}`}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        3 meses
+                      </motion.button>
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            caducidad_carnet_inactividad_meses: 6 
+                          }
+                        })}
+                        className={`px-2 py-1 rounded text-xs font-medium ${config.expiration.caducidad_carnet_inactividad_meses === 6 ? 'bg-orange-600 text-white border-orange-700' : 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200'}`}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        6 meses
+                      </motion.button>
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            caducidad_carnet_inactividad_meses: 9 
+                          }
+                        })}
+                        className={`px-2 py-1 rounded text-xs font-medium ${config.expiration.caducidad_carnet_inactividad_meses === 9 ? 'bg-orange-600 text-white border-orange-700' : 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200'}`}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        9 meses
+                      </motion.button>
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            caducidad_carnet_inactividad_meses: 12 
+                          }
+                        })}
+                        className={`px-2 py-1 rounded text-xs font-medium ${config.expiration.caducidad_carnet_inactividad_meses === 12 ? 'bg-orange-600 text-white border-orange-700' : 'bg-orange-100 text-orange-800 border-orange-300 hover:bg-orange-200'}`}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        12 meses
+                      </motion.button>
+                    </div>
+                  </div>
+
+                  {/* Ejemplo visual */}
+                  <div className="mt-4 text-sm">
+                    <div className="flex justify-between items-center p-3 rounded-md bg-orange-50 text-orange-800 shadow-sm">
+                      <span className="flex items-center">
+                        <i className="fas fa-lightbulb mr-2 text-orange-600"></i>
+                        Ejemplo:
+                      </span>
+                      <span className="font-medium bg-white bg-opacity-50 px-2 py-1 rounded-md text-xs">
+                        Sello añadido hoy: próximo sello antes del {new Date(Date.now() + config.expiration.caducidad_carnet_inactividad_meses * 30 * 24 * 60 * 60 * 1000).toLocaleDateString('es-ES')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Configuración de caducidad de carnet por antigüedad */}
+                <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm mt-4">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="caducidad_carnet_antiguedad_meses" className="block text-sm font-medium text-gray-700 flex items-center">
+                      <i className="fas fa-history mr-2 text-red-600"></i>
+                      Caducidad Carnet (Antigüedad)
+                    </label>
+                    <span className="text-xs px-3 py-1 rounded-full bg-red-100 text-red-800 font-medium shadow-sm">
+                      Límite Máximo
+                    </span>
+                  </div>
+
+                  <div className="bg-red-50 p-3 rounded-lg border border-red-100 mt-3 mb-3">
+                    <p className="text-xs text-red-700">
+                      Define la antigüedad máxima de un carnet de mascota, independientemente de la actividad. Si un carnet se crea y nunca se completa, será eliminado tras este periodo.
+                    </p>
+                  </div>
+                  
+                  {/* Control numérico mejorado */}
+                  <div className="space-y-4 mt-3">
+                    <div className="flex items-center">
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            caducidad_carnet_antiguedad_meses: Math.max(1, config.expiration.caducidad_carnet_antiguedad_meses - 6) 
+                          }
+                        })}
+                        className="px-2 py-2 bg-gray-100 rounded-l-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 border border-gray-300"
+                        whileHover={{ backgroundColor: "#e5e7eb" }}
+                        whileTap={{ scale: 0.95 }}
+                        disabled={config.expiration.caducidad_carnet_antiguedad_meses <= 6}
+                      >
+                        <i className="fas fa-minus text-gray-600"></i>
+                      </motion.button>
+                      <input
+                        type="number"
+                        id="caducidad_carnet_antiguedad_meses"
+                        name="caducidad_carnet_antiguedad_meses"
+                        value={config.expiration.caducidad_carnet_antiguedad_meses}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (!isNaN(value) && value >= 1) {
+                            updateConfig({ 
+                              expiration: { 
+                                ...config.expiration, 
+                                caducidad_carnet_antiguedad_meses: value 
+                              }
+                            });
+                          }
+                        }}
+                        step="6"
+                        min="6"
+                        className="block w-full px-3 py-2 border border-gray-300 text-center focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                      />
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            caducidad_carnet_antiguedad_meses: config.expiration.caducidad_carnet_antiguedad_meses + 6 
+                          }
+                        })}
+                        className="px-2 py-2 bg-gray-100 rounded-r-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 border border-gray-300"
+                        whileHover={{ backgroundColor: "#e5e7eb" }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <i className="fas fa-plus text-gray-600"></i>
+                      </motion.button>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            caducidad_carnet_antiguedad_meses: 12 
+                          }
+                        })}
+                        className={`px-2 py-1 rounded text-xs font-medium ${config.expiration.caducidad_carnet_antiguedad_meses === 12 ? 'bg-red-600 text-white border-red-700' : 'bg-red-100 text-red-800 border-red-300 hover:bg-red-200'}`}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        12 meses
+                      </motion.button>
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            caducidad_carnet_antiguedad_meses: 24 
+                          }
+                        })}
+                        className={`px-2 py-1 rounded text-xs font-medium ${config.expiration.caducidad_carnet_antiguedad_meses === 24 ? 'bg-red-600 text-white border-red-700' : 'bg-red-100 text-red-800 border-red-300 hover:bg-red-200'}`}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        24 meses
+                      </motion.button>
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            caducidad_carnet_antiguedad_meses: 36 
+                          }
+                        })}
+                        className={`px-2 py-1 rounded text-xs font-medium ${config.expiration.caducidad_carnet_antiguedad_meses === 36 ? 'bg-red-600 text-white border-red-700' : 'bg-red-100 text-red-800 border-red-300 hover:bg-red-200'}`}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        36 meses
+                      </motion.button>
+                    </div>
+                  </div>
+
+                  {/* Ejemplo visual */}
+                  <div className="mt-4 text-sm">
+                    <div className="flex justify-between items-center p-3 rounded-md bg-red-50 text-red-800 shadow-sm">
+                      <span className="flex items-center">
+                        <i className="fas fa-lightbulb mr-2 text-red-600"></i>
+                        Ejemplo:
+                      </span>
+                      <span className="font-medium bg-white bg-opacity-50 px-2 py-1 rounded-md text-xs">
+                        Carnet creado hoy caduca el {new Date(Date.now() + config.expiration.caducidad_carnet_antiguedad_meses * 30 * 24 * 60 * 60 * 1000).toLocaleDateString('es-ES')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Advertencia importante */}
+                <div className="bg-red-100 p-4 rounded-lg border border-red-300 mt-4">
+                  <h4 className="text-sm font-semibold text-red-800 flex items-center mb-2">
+                    <i className="fas fa-exclamation-circle mr-2"></i>
+                    Advertencia Importante
+                  </h4>
+                  <p className="text-xs text-red-700">
+                    Al guardar estos cambios, se actualizarán <strong>TODOS los registros existentes</strong> de puntos y carnets de mascota para que utilicen las nuevas fechas de caducidad. Esta acción no se puede deshacer.
+                  </p>
                 </div>
               </div>
             )}

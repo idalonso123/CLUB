@@ -1,7 +1,8 @@
 import { NextApiResponse } from "next";
 import { withAuth, AuthenticatedRequest } from "@/middleware/authMiddleware";
 import executeQuery from "@/lib/db";
-import { addYears } from "date-fns";
+import { addMonths } from "date-fns";
+import { getExpirationConfig } from "@/lib/configHelpers";
 import { SacoItem } from "@/types/teller";
 
 async function addBalanceHandler(req: AuthenticatedRequest, res: NextApiResponse) {
@@ -64,7 +65,9 @@ async function addBalanceHandler(req: AuthenticatedRequest, res: NextApiResponse
     }
 
     if (puntosAGanar > 0) {
-      const fechaCaducidad = addYears(new Date(), 1);
+      // Obtener configuración de caducidad de la base de datos
+      const expirationConfig = await getExpirationConfig();
+      const fechaCaducidad = addMonths(new Date(), expirationConfig.caducidad_puntos_meses);
 
       await executeQuery({
         query: `

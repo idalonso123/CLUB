@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import executeQuery from '@/lib/db';
-import { addYears } from 'date-fns';
+import { addMonths } from 'date-fns';
+import { getExpirationConfig } from '@/lib/configHelpers';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   
@@ -57,7 +58,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         console.error('[welcome-points] Error al registrar en logs_points:', error);
       }
 
-      const fechaCaducidad = addYears(new Date(), 1);
+      // Obtener configuración de caducidad de la base de datos
+      const expirationConfig = await getExpirationConfig();
+      const fechaCaducidad = addMonths(new Date(), expirationConfig.caducidad_puntos_meses);
       
       try {
         await executeQuery({

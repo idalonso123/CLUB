@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import executeQuery from '@/lib/db';
 import { withAuth, AuthenticatedRequest } from '@/middleware/authMiddleware';
+import { getExpirationConfig } from '@/lib/configHelpers';
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   try {
@@ -10,18 +11,22 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       return res.status(403).json({ success: false, message: 'No tienes permiso' });
     }
 
+    // Obtener configuración de caducidad
+    const expirationConfig = await getExpirationConfig();
+
     if (req.method === 'GET') {
-      // Obtener carnets activos con días calculados
+      // Obtener carnets activos con días calculados usando configuración dinámica
       const petCards = await executeQuery({
         query: `
           SELECT *,
             DATEDIFF(expirationDate, NOW()) as dias_hasta_inactividad,
-            DATEDIFF(DATE_ADD(createdAt, INTERVAL 24 MONTH), NOW()) as dias_hasta_limite
+            DATEDIFF(DATE_ADD(createdAt, INTERVAL ? MONTH), NOW()) as dias_hasta_limite
           FROM pet_cards
           WHERE completed = 0
           ORDER BY createdAt DESC
           LIMIT 20
-        `
+        `,
+        values: [expirationConfig.caducidad_carnet_antiguedad_meses]
       });
 
       // Transformar los datos
@@ -39,11 +44,11 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
           console.error('Error parseando stamp_dates:', e);
         }
 
-        // Calcular maxExpirationDate
+        // Calcular maxExpirationDate usando configuración dinámica
         let maxExpirationDate = null;
         if (card.createdAt) {
           const createdDate = new Date(card.createdAt);
-          createdDate.setMonth(createdDate.getMonth() + 24);
+          createdDate.setMonth(createdDate.getMonth() + expirationConfig.caducidad_carnet_antiguedad_meses);
           maxExpirationDate = createdDate.toISOString().slice(0, 19).replace('T', ' ');
         }
 
@@ -75,7 +80,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       }
 
       if (action === 'simulateMaxLimit' && id && months !== undefined) {
-        // Simular límite máximo (24 meses)
+        // Simular límite máximo usando configuración dinámica
         await executeQuery({
           query: `
             UPDATE pet_cards 
@@ -88,14 +93,14 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       }
 
       if (action === 'reset' && id) {
-        // Restaurar carnet
+        // Restaurar carnet usando configuración dinámica
         await executeQuery({
           query: `
             UPDATE pet_cards 
-            SET createdAt = NOW(), expirationDate = DATE_ADD(NOW(), INTERVAL 6 MONTH), isExpired = 0 
+            SET createdAt = NOW(), expirationDate = DATE_ADD(NOW(), INTERVAL ? MONTH), isExpired = 0 
             WHERE id = ?
           `,
-          values: [id]
+          values: [expirationConfig.caducidad_carnet_inactividad_meses, id]
         });
         return res.status(200).json({ success: true, message: 'Carnet restaurado' });
       }

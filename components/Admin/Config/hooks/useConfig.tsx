@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 
+interface ExpirationConfig {
+  caducidad_puntos_meses: number;
+  caducidad_carnet_inactividad_meses: number;
+  caducidad_carnet_antiguedad_meses: number;
+}
+
 interface ConfigData {
   eurosPorPunto: number;
   puntosBienvenida: number;
@@ -8,6 +14,7 @@ interface ConfigData {
     rewardIds: number[];
     showAllRewards: boolean;
   };
+  expiration: ExpirationConfig;
 }
 
 export const useConfig = (autoLoad = false) => {
@@ -18,6 +25,11 @@ export const useConfig = (autoLoad = false) => {
     tellerRewards: {
       rewardIds: [],
       showAllRewards: true
+    },
+    expiration: {
+      caducidad_puntos_meses: 12,
+      caducidad_carnet_inactividad_meses: 6,
+      caducidad_carnet_antiguedad_meses: 24
     }
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -43,6 +55,11 @@ export const useConfig = (autoLoad = false) => {
           tellerRewards: data.config?.tellerRewards || {
             rewardIds: [],
             showAllRewards: true
+          },
+          expiration: data.config?.expiration || {
+            caducidad_puntos_meses: 12,
+            caducidad_carnet_inactividad_meses: 6,
+            caducidad_carnet_antiguedad_meses: 24
           }
         });
       } else {
@@ -78,10 +95,21 @@ export const useConfig = (autoLoad = false) => {
         throw new Error('Los puntos de bienvenida deben ser un número entero positivo');
       }
       
+      // Validar configuraciones de caducidad
+      const { expiration } = config;
+      if (
+        !Number.isInteger(expiration.caducidad_puntos_meses) || expiration.caducidad_puntos_meses < 1 ||
+        !Number.isInteger(expiration.caducidad_carnet_inactividad_meses) || expiration.caducidad_carnet_inactividad_meses < 1 ||
+        !Number.isInteger(expiration.caducidad_carnet_antiguedad_meses) || expiration.caducidad_carnet_antiguedad_meses < 1
+      ) {
+        throw new Error('Las configuraciones de caducidad deben ser números enteros positivos');
+      }
+      
       console.log('Enviando configuración:', { 
         eurosPorPunto: eurosPorPuntoValue,
         puntosBienvenida: puntosBienvenidaValue,
-        tellerRewards: config.tellerRewards 
+        tellerRewards: config.tellerRewards,
+        expiration: config.expiration
       });
       
       const response = await fetch('/api/admin/config', {
@@ -90,9 +118,10 @@ export const useConfig = (autoLoad = false) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          eurosPorPunto: eurosPorPuntoValue, // Enviar eurosPorPunto como número
+          eurosPorPunto: eurosPorPuntoValue,
           puntosBienvenida: puntosBienvenidaValue,
-          tellerRewards: config.tellerRewards
+          tellerRewards: config.tellerRewards,
+          expiration: config.expiration
         }),
       });
       

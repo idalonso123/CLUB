@@ -1,6 +1,7 @@
 import { NextApiResponse } from 'next';
 import executeQuery from '@/lib/db';
 import { withAuth, AuthenticatedRequest } from '@/middleware/authMiddleware';
+import { getExpirationConfig } from '@/lib/configHelpers';
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method !== 'PUT') {
@@ -58,11 +59,14 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     }
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     
-    // Recalcular fecha de caducidad basada en el último sello restante
+    // Obtener configuración de caducidad
+    const expirationConfig = await getExpirationConfig();
+    
+    // Recalcular fecha de caducidad por inactividad basada en el último sello restante
     let expirationDateFormatted = null;
     if (stampDates.length > 0) {
       const lastStampDate = new Date(stampDates[stampDates.length - 1]);
-      lastStampDate.setMonth(lastStampDate.getMonth() + 6);
+      lastStampDate.setMonth(lastStampDate.getMonth() + expirationConfig.caducidad_carnet_inactividad_meses);
       expirationDateFormatted = lastStampDate.toISOString().slice(0, 19).replace('T', ' ');
     }
     
@@ -94,11 +98,11 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       parsedStampDates = [];
     }
     
-    // Calcular maxExpirationDate (24 meses desde creación - no cambia al eliminar sellos)
+    // Calcular maxExpirationDate (antigüedad máxima desde creación) usando configuración dinámica
     let maxExpirationDate = null;
     if (rawPetCard.createdAt) {
       const createdDate = new Date(rawPetCard.createdAt);
-      createdDate.setMonth(createdDate.getMonth() + 24);
+      createdDate.setMonth(createdDate.getMonth() + expirationConfig.caducidad_carnet_antiguedad_meses);
       maxExpirationDate = createdDate.toISOString().slice(0, 19).replace('T', ' ');
     }
     

@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import executeQuery from '@/lib/db';
 import { withAuth, AuthenticatedRequest } from '@/middleware/authMiddleware';
+import { getExpirationConfig } from '@/lib/configHelpers';
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   try {
@@ -9,6 +10,9 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     if (userRole !== 'administrador' && userRole !== 'admin') {
       return res.status(403).json({ success: false, message: 'No tienes permiso' });
     }
+
+    // Obtener configuración de caducidad
+    const expirationConfig = await getExpirationConfig();
 
     if (req.method === 'GET') {
       // Obtener puntos activos con información del usuario
@@ -64,16 +68,17 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       }
 
       if (action === 'reset' && id) {
-        // Restaurar punto a 12 meses
+        // Restaurar punto usando configuración dinámica
+        const dias = expirationConfig.caducidad_puntos_meses * 30;
         await executeQuery({
           query: `
             UPDATE puntos_caducidad 
-            SET fecha_caducidad = DATE_ADD(NOW(), INTERVAL 365 DAY), caducado = 0 
+            SET fecha_caducidad = DATE_ADD(NOW(), INTERVAL ? DAY), caducado = 0 
             WHERE id = ?
           `,
-          values: [id]
+          values: [dias, id]
         });
-        return res.status(200).json({ success: true, message: 'Punto restaurado a 12 meses' });
+        return res.status(200).json({ success: true, message: `Punto restaurado a ${expirationConfig.caducidad_puntos_meses} meses` });
       }
 
       return res.status(400).json({ success: false, message: 'Acción no válida' });

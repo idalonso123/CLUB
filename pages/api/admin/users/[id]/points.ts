@@ -1,7 +1,8 @@
 import { NextApiResponse } from 'next';
 import { withAuth, AuthenticatedRequest } from '@/middleware/authMiddleware';
 import executeQuery from '@/lib/db';
-import { addYears } from 'date-fns';
+import { addMonths } from 'date-fns';
+import { getExpirationConfig } from '@/lib/configHelpers';
 
 async function userPointsHandler(req: AuthenticatedRequest, res: NextApiResponse) {
   // Verificar que req.user está definido
@@ -97,7 +98,9 @@ async function userPointsHandler(req: AuthenticatedRequest, res: NextApiResponse
       
       // 3.1 Si el ajuste es positivo, registrar en la tabla puntos_caducidad para expiración gradual
       if (adjustment > 0) {
-        const fechaCaducidad = addYears(new Date(), 1);
+        // Obtener configuración de caducidad de la base de datos
+        const expirationConfig = await getExpirationConfig();
+        const fechaCaducidad = addMonths(new Date(), expirationConfig.caducidad_puntos_meses);
         
         await executeQuery({
           query: `

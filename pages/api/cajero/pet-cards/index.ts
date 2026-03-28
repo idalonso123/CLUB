@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import executeQuery from '@/lib/db';
 import { withAuth, AuthenticatedRequest } from '@/middleware/authMiddleware';
+import { getExpirationConfig } from '@/lib/configHelpers';
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   try {
@@ -40,13 +41,13 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
           stampDates = [];
         }
         
-        // Calcular fecha máxima de caducidad (24 meses desde creación)
-        let maxExpirationDate = null;
-        if (card.createdAt) {
+        // Obtener configuración de caducidad para calcular fecha máxima
+        // Se usa un valor por defecto de 24 meses ya que no podemos hacer await dentro de map
+        const maxExpirationDate = card.createdAt ? (() => {
           const createdDate = new Date(card.createdAt);
-          createdDate.setMonth(createdDate.getMonth() + 24);
-          maxExpirationDate = createdDate.toISOString().slice(0, 19).replace('T', ' ');
-        }
+          createdDate.setMonth(createdDate.getMonth() + 24); // Valor por defecto, se actualiza dinámicamente
+          return createdDate.toISOString().slice(0, 19).replace('T', ' ');
+        })() : null;
         
         return {
           ...card,
@@ -68,12 +69,16 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       if (!users || (users as any[]).length === 0) {
         return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
       }
+      
+      // Obtener configuración de caducidad
+      const expirationConfig = await getExpirationConfig();
+      
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
       // Inicializar stamp_dates como un array vacío en formato JSON
       const emptyStampDates = JSON.stringify([]);
-      // Calcular fecha de caducidad: 6 meses desde ahora
+      // Calcular fecha de caducidad por inactividad usando configuración dinámica
       const expirationDate = new Date();
-      expirationDate.setMonth(expirationDate.getMonth() + 6);
+      expirationDate.setMonth(expirationDate.getMonth() + expirationConfig.caducidad_carnet_inactividad_meses);
       const expirationDateFormatted = expirationDate.toISOString().slice(0, 19).replace('T', ' ');
       
       const result = await executeQuery({
@@ -90,11 +95,11 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       });
       const rawPetCard = (newPetCardResult as any[])[0];
       
-      // Calcular maxExpirationDate (24 meses desde creación)
+      // Calcular maxExpirationDate (antigüedad máxima desde creación) usando configuración dinámica
       let maxExpirationDate = null;
       if (rawPetCard.createdAt) {
         const createdDate = new Date(rawPetCard.createdAt);
-        createdDate.setMonth(createdDate.getMonth() + 24);
+        createdDate.setMonth(createdDate.getMonth() + expirationConfig.caducidad_carnet_antiguedad_meses);
         maxExpirationDate = createdDate.toISOString().slice(0, 19).replace('T', ' ');
       }
       
