@@ -2005,24 +2005,7 @@ const EmailSection: React.FC = () => {
                         <input
                           type="date"
                           value={segmentForm.filters.birth_date_from}
-                          onChange={(e) => {
-                            const newFrom = e.target.value;
-                            setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, birth_date_from: newFrom } });
-                            const to = segmentForm.filters.birth_date_to;
-                            if (to && newFrom > to) {
-                              toast.error('⚠️ Error: La fecha "Desde" ('
-                                + newFrom + ') es mayor que la fecha "Hasta" (' + to + '). Por favor, corrige la fecha de nacimiento.', {
-                                duration: 5000,
-                                style: {
-                                  background: '#FEF2F2',
-                                  color: '#991B1B',
-                                  border: '2px solid #DC2626',
-                                  padding: '16px',
-                                  fontSize: '14px',
-                                },
-                              });
-                            }
-                          }}
+                          onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, birth_date_from: e.target.value } })}
                           className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
                             segmentForm.filters.birth_date_from && segmentForm.filters.birth_date_to &&
                             segmentForm.filters.birth_date_from > segmentForm.filters.birth_date_to
@@ -2036,24 +2019,7 @@ const EmailSection: React.FC = () => {
                         <input
                           type="date"
                           value={segmentForm.filters.birth_date_to}
-                          onChange={(e) => {
-                            const newTo = e.target.value;
-                            setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, birth_date_to: newTo } });
-                            const from = segmentForm.filters.birth_date_from;
-                            if (from && newTo < from) {
-                              toast.error('⚠️ Error: La fecha "Hasta" ('
-                                + newTo + ') es menor que la fecha "Desde" (' + from + '). Por favor, corrige la fecha de nacimiento.', {
-                                duration: 5000,
-                                style: {
-                                  background: '#FEF2F2',
-                                  color: '#991B1B',
-                                  border: '2px solid #DC2626',
-                                  padding: '16px',
-                                  fontSize: '14px',
-                                },
-                              });
-                            }
-                          }}
+                          onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, birth_date_to: e.target.value } })}
                           className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${
                             segmentForm.filters.birth_date_from && segmentForm.filters.birth_date_to &&
                             segmentForm.filters.birth_date_from > segmentForm.filters.birth_date_to
@@ -2081,23 +2047,7 @@ const EmailSection: React.FC = () => {
                         type="number"
                         min="0"
                         value={segmentForm.filters.points_min ?? ''}
-                        onChange={(e) => {
-                          const newMin = e.target.value ? parseInt(e.target.value) : undefined;
-                          setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, points_min: newMin } });
-                          const max = segmentForm.filters.points_max;
-                          if (newMin !== undefined && max !== undefined && newMin > max) {
-                            toast.error('⚠️ Error: El valor mínimo de puntos (' + newMin + ') es mayor que el valor máximo (' + max + '). Por favor, corrige el rango de puntos.', {
-                              duration: 5000,
-                              style: {
-                                background: '#FEF2F2',
-                                color: '#991B1B',
-                                border: '2px solid #DC2626',
-                                padding: '16px',
-                                fontSize: '14px',
-                              },
-                            });
-                          }
-                        }}
+                        onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, points_min: e.target.value ? parseInt(e.target.value) : undefined } })}
                         className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
                           segmentForm.filters.points_min !== undefined && segmentForm.filters.points_max !== undefined &&
                           segmentForm.filters.points_min > segmentForm.filters.points_max
@@ -2113,23 +2063,7 @@ const EmailSection: React.FC = () => {
                         type="number"
                         min="0"
                         value={segmentForm.filters.points_max ?? ''}
-                        onChange={(e) => {
-                          const newMax = e.target.value ? parseInt(e.target.value) : undefined;
-                          setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, points_max: newMax } });
-                          const min = segmentForm.filters.points_min;
-                          if (newMax !== undefined && min !== undefined && newMax < min) {
-                            toast.error('⚠️ Error: El valor máximo de puntos (' + newMax + ') es menor que el valor mínimo (' + min + '). Por favor, corrige el rango de puntos.', {
-                              duration: 5000,
-                              style: {
-                                background: '#FEF2F2',
-                                color: '#991B1B',
-                                border: '2px solid #DC2626',
-                                padding: '16px',
-                                fontSize: '14px',
-                              },
-                            });
-                          }
-                        }}
+                        onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, points_max: e.target.value ? parseInt(e.target.value) : undefined } })}
                         className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
                           segmentForm.filters.points_min !== undefined && segmentForm.filters.points_max !== undefined &&
                           segmentForm.filters.points_min > segmentForm.filters.points_max
@@ -2168,23 +2102,7 @@ const EmailSection: React.FC = () => {
                           type="number"
                           min="0"
                           value={segmentForm.filters.sales_amount_min ?? ''}
-                          onChange={(e) => {
-                            const newMin = e.target.value ? parseInt(e.target.value) : undefined;
-                            setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, sales_amount_min: newMin } });
-                            const max = segmentForm.filters.sales_amount_max;
-                            if (newMin !== undefined && max !== undefined && newMin > max) {
-                              toast.error('⚠️ Error: El valor mínimo de ventas (' + newMin + ' puntos) es mayor que el valor máximo (' + max + ' puntos). Por favor, corrige el rango de ventas.', {
-                                duration: 5000,
-                                style: {
-                                  background: '#FEF2F2',
-                                  color: '#991B1B',
-                                  border: '2px solid #DC2626',
-                                  padding: '16px',
-                                  fontSize: '14px',
-                                },
-                              });
-                            }
-                          }}
+                          onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, sales_amount_min: e.target.value ? parseInt(e.target.value) : undefined } })}
                           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${
                             segmentForm.filters.sales_amount_min !== undefined && segmentForm.filters.sales_amount_max !== undefined &&
                             segmentForm.filters.sales_amount_min > segmentForm.filters.sales_amount_max
@@ -2200,23 +2118,7 @@ const EmailSection: React.FC = () => {
                           type="number"
                           min="0"
                           value={segmentForm.filters.sales_amount_max ?? ''}
-                          onChange={(e) => {
-                            const newMax = e.target.value ? parseInt(e.target.value) : undefined;
-                            setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, sales_amount_max: newMax } });
-                            const min = segmentForm.filters.sales_amount_min;
-                            if (newMax !== undefined && min !== undefined && newMax < min) {
-                              toast.error('⚠️ Error: El valor máximo de ventas (' + newMax + ' puntos) es menor que el valor mínimo (' + min + ' puntos). Por favor, corrige el rango de ventas.', {
-                                duration: 5000,
-                                style: {
-                                  background: '#FEF2F2',
-                                  color: '#991B1B',
-                                  border: '2px solid #DC2626',
-                                  padding: '16px',
-                                  fontSize: '14px',
-                                },
-                              });
-                            }
-                          }}
+                          onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, sales_amount_max: e.target.value ? parseInt(e.target.value) : undefined } })}
                           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${
                             segmentForm.filters.sales_amount_min !== undefined && segmentForm.filters.sales_amount_max !== undefined &&
                             segmentForm.filters.sales_amount_min > segmentForm.filters.sales_amount_max
@@ -2261,23 +2163,7 @@ const EmailSection: React.FC = () => {
                           type="number"
                           min="0"
                           value={segmentForm.filters.inactivity_days_min ?? ''}
-                          onChange={(e) => {
-                            const newMin = e.target.value ? parseInt(e.target.value) : undefined;
-                            setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, inactivity_days_min: newMin } });
-                            const max = segmentForm.filters.inactivity_days_max;
-                            if (newMin !== undefined && max !== undefined && newMin > max) {
-                              toast.error('⚠️ Error: El valor mínimo de inactividad (' + newMin + ' días) es mayor que el valor máximo (' + max + ' días). Por favor, corrige el rango de inactividad.', {
-                                duration: 5000,
-                                style: {
-                                  background: '#FEF2F2',
-                                  color: '#991B1B',
-                                  border: '2px solid #DC2626',
-                                  padding: '16px',
-                                  fontSize: '14px',
-                                },
-                              });
-                            }
-                          }}
+                          onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, inactivity_days_min: e.target.value ? parseInt(e.target.value) : undefined } })}
                           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${
                             segmentForm.filters.inactivity_days_min !== undefined && segmentForm.filters.inactivity_days_max !== undefined &&
                             segmentForm.filters.inactivity_days_min > segmentForm.filters.inactivity_days_max
@@ -2294,23 +2180,7 @@ const EmailSection: React.FC = () => {
                           type="number"
                           min="0"
                           value={segmentForm.filters.inactivity_days_max ?? ''}
-                          onChange={(e) => {
-                            const newMax = e.target.value ? parseInt(e.target.value) : undefined;
-                            setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, inactivity_days_max: newMax } });
-                            const min = segmentForm.filters.inactivity_days_min;
-                            if (newMax !== undefined && min !== undefined && newMax < min) {
-                              toast.error('⚠️ Error: El valor máximo de inactividad (' + newMax + ' días) es menor que el valor mínimo (' + min + ' días). Por favor, corrige el rango de inactividad.', {
-                                duration: 5000,
-                                style: {
-                                  background: '#FEF2F2',
-                                  color: '#991B1B',
-                                  border: '2px solid #DC2626',
-                                  padding: '16px',
-                                  fontSize: '14px',
-                                },
-                              });
-                            }
-                          }}
+                          onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, inactivity_days_max: e.target.value ? parseInt(e.target.value) : undefined } })}
                           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${
                             segmentForm.filters.inactivity_days_min !== undefined && segmentForm.filters.inactivity_days_max !== undefined &&
                             segmentForm.filters.inactivity_days_min > segmentForm.filters.inactivity_days_max
@@ -2339,24 +2209,7 @@ const EmailSection: React.FC = () => {
                       <input
                         type="date"
                         value={segmentForm.filters.registration_date_from}
-                        onChange={(e) => {
-                          const newFrom = e.target.value;
-                          setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, registration_date_from: newFrom } });
-                          const to = segmentForm.filters.registration_date_to;
-                          if (to && newFrom > to) {
-                            toast.error('⚠️ Error: La fecha de registro "Desde" ('
-                              + newFrom + ') es mayor que la fecha "Hasta" (' + to + '). Por favor, corrige el rango de fechas de registro.', {
-                              duration: 5000,
-                              style: {
-                                background: '#FEF2F2',
-                                color: '#991B1B',
-                                border: '2px solid #DC2626',
-                                padding: '16px',
-                                fontSize: '14px',
-                              },
-                            });
-                          }
-                        }}
+                        onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, registration_date_from: e.target.value } })}
                         className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
                           segmentForm.filters.registration_date_from && segmentForm.filters.registration_date_to &&
                           segmentForm.filters.registration_date_from > segmentForm.filters.registration_date_to
@@ -2370,24 +2223,7 @@ const EmailSection: React.FC = () => {
                       <input
                         type="date"
                         value={segmentForm.filters.registration_date_to}
-                        onChange={(e) => {
-                          const newTo = e.target.value;
-                          setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, registration_date_to: newTo } });
-                          const from = segmentForm.filters.registration_date_from;
-                          if (from && newTo < from) {
-                            toast.error('⚠️ Error: La fecha de registro "Hasta" ('
-                              + newTo + ') es menor que la fecha "Desde" (' + from + '). Por favor, corrige el rango de fechas de registro.', {
-                              duration: 5000,
-                              style: {
-                                background: '#FEF2F2',
-                                color: '#991B1B',
-                                border: '2px solid #DC2626',
-                                padding: '16px',
-                                fontSize: '14px',
-                              },
-                            });
-                          }
-                        }}
+                        onChange={(e) => setSegmentForm({ ...segmentForm, filters: { ...segmentForm.filters, registration_date_to: e.target.value } })}
                         className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
                           segmentForm.filters.registration_date_from && segmentForm.filters.registration_date_to &&
                           segmentForm.filters.registration_date_from > segmentForm.filters.registration_date_to
