@@ -1,6 +1,7 @@
 import { NextApiResponse } from 'next';
 import executeQuery from '@/lib/db';
 import { withAuth, AuthenticatedRequest } from '@/middleware/authMiddleware';
+import { getExpirationConfig } from '@/lib/configHelpers';
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -11,6 +12,9 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Usuario no autenticado' });
     }
+    // Obtener configuración de caducidad
+    const expirationConfig = await getExpirationConfig();
+    
     const petCards = await executeQuery({
       query: `SELECT * FROM pet_cards WHERE userId = ? ORDER BY completed ASC, createdAt DESC`,
       values: [userId]
@@ -31,11 +35,11 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         stampDates = [];
       }
       
-      // Calcular fecha máxima de caducidad (24 meses desde creación)
+      // Calcular fecha máxima de caducidad usando configuración dinámica
       let maxExpirationDate = null;
       if (card.createdAt) {
         const createdDate = new Date(card.createdAt);
-        createdDate.setMonth(createdDate.getMonth() + 24);
+        createdDate.setMonth(createdDate.getMonth() + expirationConfig.caducidad_carnet_antiguedad_meses);
         maxExpirationDate = createdDate.toISOString().slice(0, 19).replace('T', ' ');
       }
       

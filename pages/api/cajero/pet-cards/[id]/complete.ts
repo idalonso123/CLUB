@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import executeQuery from '@/lib/db';
 import { withAuth, AuthenticatedRequest } from '@/middleware/authMiddleware';
+import { getExpirationConfig } from '@/lib/configHelpers';
 
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   try {
@@ -47,11 +48,14 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     });
     const rawPetCard = (updatedPetCardsResult as any[])[0];
     
-    // Calcular maxExpirationDate (24 meses desde creación - no cambia al completar)
+    // Obtener configuración de caducidad para calcular maxExpirationDate
+    const expirationConfig = await getExpirationConfig();
+    
+    // Calcular maxExpirationDate (antigüedad máxima desde creación - no cambia al completar)
     let maxExpirationDate = null;
     if (rawPetCard.createdAt) {
       const createdDate = new Date(rawPetCard.createdAt);
-      createdDate.setMonth(createdDate.getMonth() + 24);
+      createdDate.setMonth(createdDate.getMonth() + expirationConfig.caducidad_carnet_antiguedad_meses);
       maxExpirationDate = createdDate.toISOString().slice(0, 19).replace('T', ' ');
     }
     

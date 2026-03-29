@@ -25,6 +25,10 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         `,
         values: [Number(userId)]
       });
+      
+      // Obtener configuración de caducidad para calcular fecha máxima
+      const expirationConfig = await getExpirationConfig();
+      
       const petCards = (petCardsResult as any[]).map(card => {
         let stampDates = [];
         try {
@@ -41,11 +45,9 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
           stampDates = [];
         }
         
-        // Obtener configuración de caducidad para calcular fecha máxima
-        // Se usa un valor por defecto de 24 meses ya que no podemos hacer await dentro de map
         const maxExpirationDate = card.createdAt ? (() => {
           const createdDate = new Date(card.createdAt);
-          createdDate.setMonth(createdDate.getMonth() + 24); // Valor por defecto, se actualiza dinámicamente
+          createdDate.setMonth(createdDate.getMonth() + expirationConfig.caducidad_carnet_antiguedad_meses);
           return createdDate.toISOString().slice(0, 19).replace('T', ' ');
         })() : null;
         
