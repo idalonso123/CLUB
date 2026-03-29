@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PetCardModalProps, PetCard } from "@/types/teller";
+import useExpirationConfig from "@/components/hooks/useExpirationConfig";
 
 const PetCardModal: React.FC<PetCardModalProps> = ({
   isOpen,
@@ -25,19 +26,26 @@ const PetCardModal: React.FC<PetCardModalProps> = ({
   const [cardToDelete, setCardToDelete] = useState<PetCard | null>(null);
   // Controla qué carnet está expandido
   const [openCardId, setOpenCardId] = useState<number | null>(null);
+
+  // Obtener configuración de caducidades dinámicamente
+  const { config: expirationConfig } = useExpirationConfig();
+
+  // Valores por defecto si no se ha cargado la configuración
+  const mesesInactividad = expirationConfig?.caducidad_carnet_inactividad_meses || 6;
+  const mesesAntiguedad = expirationConfig?.caducidad_carnet_antiguedad_meses || 24;
   
-  // Función para verificar si un carnet ha expirado (por 6 meses o por 24 meses máximo)
+  // Función para verificar si un carnet ha expirado (por inactividad o por antigüedad máxima)
   const isCardExpired = (card: PetCard): boolean => {
     if (card.completed) return false;
     // Verificar tanto el campo isExpired de la BD como las fechas
     if (card.isExpired === 1 || card.isExpired === true) return true;
     
-    // REGLA 1: 6 meses desde el último sello
+    // REGLA 1: Meses de inactividad desde el último sello
     if (card.expirationDate && new Date(card.expirationDate) < new Date()) {
       return true;
     }
     
-    // REGLA 2: 24 meses desde creación (máximo absoluto)
+    // REGLA 2: Meses de antigüedad desde creación (máximo absoluto)
     if (card.maxExpirationDate) {
       if (new Date(card.maxExpirationDate) < new Date()) {
         return true;
@@ -45,7 +53,7 @@ const PetCardModal: React.FC<PetCardModalProps> = ({
     } else if (card.createdAt) {
       // Si no hay maxExpirationDate calculado, calcularlo manualmente
       const maxExpDate = new Date(card.createdAt);
-      maxExpDate.setMonth(maxExpDate.getMonth() + 24);
+      maxExpDate.setMonth(maxExpDate.getMonth() + mesesAntiguedad);
       if (maxExpDate < new Date()) {
         return true;
       }
@@ -62,7 +70,7 @@ const PetCardModal: React.FC<PetCardModalProps> = ({
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
   
-  // Función para calcular días hasta la expiración máxima (24 meses)
+  // Función para calcular días hasta la expiración máxima (meses de antigüedad)
   const getDaysUntilMaxExpiration = (maxExpirationDate: string): number => {
     const now = new Date();
     const maxExpDate = new Date(maxExpirationDate);
@@ -78,7 +86,7 @@ const PetCardModal: React.FC<PetCardModalProps> = ({
     let nextDate: Date | null = null;
     let isMaxExpiration = false;
     
-    // Calcular 6 meses desde último sello
+    // Calcular meses de inactividad desde último sello
     if (card.expirationDate) {
       const stampExpDate = new Date(card.expirationDate);
       if (stampExpDate > now) {
@@ -86,7 +94,7 @@ const PetCardModal: React.FC<PetCardModalProps> = ({
       }
     }
     
-    // Calcular 24 meses desde creación (máximo absoluto)
+    // Calcular meses de antigüedad desde creación (máximo absoluto)
     if (card.maxExpirationDate) {
       const maxExpDate = new Date(card.maxExpirationDate);
       if (maxExpDate > now) {
@@ -98,7 +106,7 @@ const PetCardModal: React.FC<PetCardModalProps> = ({
     } else if (card.createdAt) {
       // Si no hay maxExpirationDate, calcularlo manualmente
       const maxExpDate = new Date(card.createdAt);
-      maxExpDate.setMonth(maxExpDate.getMonth() + 24);
+      maxExpDate.setMonth(maxExpDate.getMonth() + mesesAntiguedad);
       if (maxExpDate > now) {
         if (!nextDate || maxExpDate < nextDate) {
           nextDate = maxExpDate;
@@ -318,7 +326,7 @@ const PetCardModal: React.FC<PetCardModalProps> = ({
                                 {/* Información de caducidad dual */}
                                 {!card.completed && (
                                   <>
-                                    {/* Fecha de caducidad por inactividad (6 meses desde último sello) */}
+                                    {/* Fecha de caducidad por inactividad ({mesesInactividad} meses desde último sello) */}
                                     {card.expirationDate && (
                                       <p className={`text-xs mt-1 ${expired ? 'text-red-600 font-medium' : daysLeft && daysLeft <= 30 ? 'text-orange-600' : 'text-gray-500'}`}>
                                         <i className={`fas fa-clock mr-1 ${expired ? 'text-red-600' : ''}`}></i>
@@ -329,7 +337,7 @@ const PetCardModal: React.FC<PetCardModalProps> = ({
                                         )}
                                       </p>
                                     )}
-                                    {/* Fecha de caducidad máxima (24 meses desde creación) */}
+                                    {/* Fecha de caducidad máxima ({mesesAntiguedad} meses desde creación) */}
                                     {card.maxExpirationDate && (
                                       <p className={`text-xs mt-1 ${new Date(card.maxExpirationDate) < new Date() ? 'text-red-600 font-medium' : 
                                         (() => {

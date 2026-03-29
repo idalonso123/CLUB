@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { PetCard } from '@/types/teller';
+import useExpirationConfig from '@/components/hooks/useExpirationConfig';
 
 interface PetCardsDisplayProps {
   itemVariants: any;
@@ -13,18 +14,25 @@ const PetCardsDisplay: React.FC<PetCardsDisplayProps> = ({ itemVariants }) => {
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'completed' | 'expiring'>('active');
   const [isInfoOpen, setIsInfoOpen] = useState(false);
 
-  // Función para verificar si un carnet ha expirado (por 6 meses o por 24 meses máximo)
+  // Obtener configuración de caducidades dinámicamente
+  const { config: expirationConfig } = useExpirationConfig();
+
+  // Valores por defecto si no se ha cargado la configuración
+  const mesesInactividad = expirationConfig?.caducidad_carnet_inactividad_meses || 6;
+  const mesesAntiguedad = expirationConfig?.caducidad_carnet_antiguedad_meses || 24;
+
+  // Función para verificar si un carnet ha expirado (por inactividad o por antigüedad máxima)
   const isCardExpired = (card: PetCard): boolean => {
     if (card.completed) return false;
     // Verificar el campo isExpired de la BD
     if (card.isExpired === 1 || card.isExpired === true) return true;
     
-    // REGLA 1: 6 meses desde el último sello
+    // REGLA 1: Meses de inactividad desde el último sello
     if (card.expirationDate && new Date(card.expirationDate) < new Date()) {
       return true;
     }
     
-    // REGLA 2: 24 meses desde creación (máximo absoluto)
+    // REGLA 2: Meses de antigüedad desde creación (máximo absoluto)
     if (card.maxExpirationDate) {
       if (new Date(card.maxExpirationDate) < new Date()) {
         return true;
@@ -32,7 +40,7 @@ const PetCardsDisplay: React.FC<PetCardsDisplayProps> = ({ itemVariants }) => {
     } else if (card.createdAt) {
       // Si no hay maxExpirationDate calculado, calcularlo manualmente
       const maxExpDate = new Date(card.createdAt);
-      maxExpDate.setMonth(maxExpDate.getMonth() + 24);
+      maxExpDate.setMonth(maxExpDate.getMonth() + mesesAntiguedad);
       if (maxExpDate < new Date()) {
         return true;
       }
@@ -49,7 +57,7 @@ const PetCardsDisplay: React.FC<PetCardsDisplayProps> = ({ itemVariants }) => {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  // Función para calcular días hasta la expiración máxima (24 meses)
+  // Función para calcular días hasta la expiración máxima (meses de antigüedad)
   const getDaysUntilMaxExpiration = (maxExpirationDate: string): number => {
     const now = new Date();
     const maxExpDate = new Date(maxExpirationDate);
@@ -75,7 +83,7 @@ const PetCardsDisplay: React.FC<PetCardsDisplayProps> = ({ itemVariants }) => {
     let nextDate: Date | null = null;
     let isMaxExpiration = false;
     
-    // Calcular 6 meses desde último sello
+    // Calcular meses de inactividad desde último sello
     if (card.expirationDate) {
       const stampExpDate = new Date(card.expirationDate);
       if (stampExpDate > now) {
@@ -83,7 +91,7 @@ const PetCardsDisplay: React.FC<PetCardsDisplayProps> = ({ itemVariants }) => {
       }
     }
     
-    // Calcular 24 meses desde creación (máximo absoluto)
+    // Calcular meses de antigüedad desde creación (máximo absoluto)
     if (card.maxExpirationDate) {
       const maxExpDate = new Date(card.maxExpirationDate);
       if (maxExpDate > now) {
@@ -95,7 +103,7 @@ const PetCardsDisplay: React.FC<PetCardsDisplayProps> = ({ itemVariants }) => {
     } else if (card.createdAt) {
       // Si no hay maxExpirationDate, calcularlo manualmente
       const maxExpDate = new Date(card.createdAt);
-      maxExpDate.setMonth(maxExpDate.getMonth() + 24);
+      maxExpDate.setMonth(maxExpDate.getMonth() + mesesAntiguedad);
       if (maxExpDate > now) {
         if (!nextDate || maxExpDate < nextDate) {
           nextDate = maxExpDate;
@@ -265,8 +273,8 @@ const PetCardsDisplay: React.FC<PetCardsDisplayProps> = ({ itemVariants }) => {
               <li>Los sellos se aplican únicamente en el momento de la compra, presentando la tarjeta correspondiente.</li>
               <li><strong>Caducidad del carnet:</strong> El carnet de mascota caduca por dos motivos:
                 <ul className="list-disc pl-5 mt-1">
-                  <li>Por inactividad: si pasan 6 meses desde el último sello añadido, el carnet desaparecerá automáticamente.</li>
-                  <li>Límite máximo: el carnet tiene una duración máxima de 24 meses desde su creación, independientemente de los sellos que tenga. Una vez alcanzado este límite, se eliminará automáticamente sin posibilidad de recuperación.</li>
+                  <li>Por inactividad: si pasan {mesesInactividad} meses desde el último sello añadido, el carnet desaparecerá automáticamente.</li>
+                  <li>Límite máximo: el carnet tiene una duración máxima de {mesesAntiguedad} meses desde su creación, independientemente de los sellos que tenga. Una vez alcanzado este límite, se eliminará automáticamente sin posibilidad de recuperación.</li>
                 </ul>
               </li>
             </motion.ul>

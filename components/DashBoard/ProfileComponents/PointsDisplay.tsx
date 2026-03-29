@@ -1,19 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import usePointsExpiration from '@/components/DashBoard/hooks/usePointsExpiration';
+import useAppConfig from '@/components/hooks/useExpirationConfig';
 
 interface PointsDisplayProps {
   points: number;
   itemVariants: any;
 }
 
-// Puntos necesarios para obtener un cheque de 5€
+// Puntos necesarios para obtener un cheque de 5€ (valor fijo del sistema de recompensas)
 const POINTS_FOR_VOUCHER = 50;
+const VOUCHER_VALUE = 5;
 
 const PointsDisplay: React.FC<PointsDisplayProps> = ({ points, itemVariants }) => {
   const [showExpirationDetails, setShowExpirationDetails] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const { isLoading, error, expirationData, formatMonthYear, formatDate } = usePointsExpiration();
+  
+  // Obtener configuración de puntos dinámicamente
+  const { config: appConfig } = useAppConfig();
+  
+  // Valores dinámicos de configuración
+  const eurosPorPunto = appConfig?.eurosPorPunto || 3.5;
   
   // Evitar problemas de hidratación usando useEffect
   useEffect(() => {
@@ -48,10 +56,10 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({ points, itemVariants }) =
             <span className="text-xl font-bold text-green-700">{safePoints}</span>
           </div>
 
-          {/* Barra de progreso hacia el cheque de 5€ */}
+          {/* Barra de progreso hacia el cheque de {VOUCHER_VALUE}€ */}
           <div className="mb-2">
             <div className="flex justify-between text-xs text-gray-600 mb-1">
-              <span>Progreso para cheque de 5€</span>
+              <span>Progreso para cheque de {VOUCHER_VALUE}€</span>
               <span>{Math.round(progressToVoucher)}%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5">
@@ -70,7 +78,7 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({ points, itemVariants }) =
               <div className="flex items-center">
                 <i className="fas fa-gift text-green-600 mr-2"></i>
                 <span className="text-sm font-medium text-green-700">
-                  ¡Cheque de 5€ disponible!
+                  ¡Cheque de {VOUCHER_VALUE}€ disponible!
                 </span>
               </div>
               <span className="text-xs text-green-600">
@@ -80,7 +88,7 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({ points, itemVariants }) =
           ) : (
             <div className="text-xs text-gray-500 mt-1">
               <i className="fas fa-info-circle mr-1"></i>
-              {pointsToVoucher} puntos más para obtener un cheque de 5€
+              {pointsToVoucher} puntos más para obtener un cheque de {VOUCHER_VALUE}€
             </div>
           )}
         </div>
@@ -91,8 +99,8 @@ const PointsDisplay: React.FC<PointsDisplayProps> = ({ points, itemVariants }) =
             <i className="fas fa-coins text-blue-600 mr-2 mt-1"></i>
             <div className="text-sm text-blue-700">
               <span className="font-medium">Sistema de puntos:</span>
-              <p>Por cada 3,50€ de compra, acumulas 1 punto de fidelidad.</p>
-              <p className="mt-1">Con <strong>50 puntos</strong> obtienes un cheque de <strong>5€</strong> de descuento.</p>
+              <p>Por cada {eurosPorPunto.toFixed(2).replace('.', ',')}€ de compra, acumulas <strong>1 punto</strong> de fidelidad.</p>
+              <p className="mt-1">Con <strong>{POINTS_FOR_VOUCHER} puntos</strong> obtienes un cheque de <strong>{VOUCHER_VALUE}€</strong> de descuento.</p>
             </div>
           </div>
         </div>

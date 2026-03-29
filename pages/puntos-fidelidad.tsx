@@ -6,6 +6,7 @@ import PointsDisplay from '@/components/DashBoard/ProfileComponents/PointsDispla
 import ClientLevelDisplay from '@/components/DashBoard/ProfileComponents/ClientLevelDisplay';
 import useUserProfile from '@/components/DashBoard/hooks/useUserProfile';
 import { getCompanyName, getTermsUsageUrl } from '@/lib/utils/pageUtils';
+import useAppConfig from '@/components/hooks/useExpirationConfig';
 
 const PuntosFidelidadPage = () => {
     const {
@@ -15,6 +16,13 @@ const PuntosFidelidadPage = () => {
         containerVariants,
         itemVariants
     } = useUserProfile();
+
+    // Obtener configuración completa dinámicamente
+    const { config: appConfig } = useAppConfig();
+    
+    // Valores de configuración
+    const eurosPorPunto = appConfig?.eurosPorPunto || 3.5;
+    const caducidadPuntos = appConfig?.caducidad_puntos_meses || 12;
 
     if (isLoading) {
         return (
@@ -86,7 +94,7 @@ const PuntosFidelidadPage = () => {
                                 <div>
                                     <div className="font-medium text-green-700">Acumulación de puntos</div>
                                     <p className="text-gray-600 text-sm mt-1">
-                                        Por cada <strong>3,50 €</strong> de compra, acumulas <strong>1 punto</strong> de fidelidad.
+                                        Por cada <strong>{eurosPorPunto.toFixed(2).replace('.', ',')} €</strong> de compra, acumulas <strong>1 punto</strong> de fidelidad.
                                     </p>
                                 </div>
                             </div>
@@ -117,7 +125,7 @@ const PuntosFidelidadPage = () => {
                                 <div>
                                     <div className="font-medium text-amber-700">Validez de los puntos</div>
                                     <p className="text-gray-600 text-sm mt-1">
-                                        Los puntos tienen una vigencia de <strong>12 meses</strong> desde su generación.
+                                        Los puntos tienen una vigencia de <strong>{caducidadPuntos} meses</strong> desde su generación.
                                     </p>
                                     <p className="text-xs text-gray-500 mt-1">
                                         Una vez vencido este plazo, los puntos caducan automáticamente.
