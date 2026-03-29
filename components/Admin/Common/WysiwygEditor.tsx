@@ -419,7 +419,7 @@ const WysiwygEditor: React.FC<WysiwygEditorProps> = ({
       {/* Help Text */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-t border-blue-100 px-4 py-2">
         <p className="text-xs text-blue-700">
-          💡 Consejo: Usa los botones de variables para insertar datos del cliente automáticamente. El texto se reemplazará con los datos reales al enviar el email.
+          Consejo: Usa los botones de variables para insertar datos del cliente automaticamente. El texto se reemplazara con los datos reales al enviar el email.
         </p>
       </div>
 

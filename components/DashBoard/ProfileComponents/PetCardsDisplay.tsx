@@ -20,6 +20,7 @@ const PetCardsDisplay: React.FC<PetCardsDisplayProps> = ({ itemVariants }) => {
   // Valores por defecto si no se ha cargado la configuración
   const mesesInactividad = expirationConfig?.caducidad_carnet_inactividad_meses || 6;
   const mesesAntiguedad = expirationConfig?.caducidad_carnet_antiguedad_meses || 24;
+  const sellosRequeridos = expirationConfig?.sellos_requeridos_carnet || 6;
 
   // Función para verificar si un carnet ha expirado (por inactividad o por antigüedad máxima)
   const isCardExpired = (card: PetCard): boolean => {
@@ -340,7 +341,7 @@ const PetCardsDisplay: React.FC<PetCardsDisplayProps> = ({ itemVariants }) => {
                     </p>
                   </div>
                   <div className={`px-2 py-1 rounded text-xs font-medium ${card.completed ? 'bg-green-100 text-green-800' : expired ? 'bg-red-100 text-red-800' : expiringSoon ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
-                    {card.completed ? 'Completado - Saco Regalo' : expired ? 'Caducado' : expiringSoon ? 'Próximo a expirar' : `${card.stamps}/6 Sellos`}
+                    {card.completed ? 'Completado - Saco Regalo' : expired ? 'Caducado' : expiringSoon ? 'Próximo a expirar' : `${card.stamps}/${sellosRequeridos} Sellos`}
                   </div>
                 </div>
                 
@@ -389,7 +390,7 @@ const PetCardsDisplay: React.FC<PetCardsDisplayProps> = ({ itemVariants }) => {
                 
                 <div className="mb-2">
                   <div className="grid grid-cols-5 gap-2">
-                    {Array.from({ length: 6 }).map((_, index) => {
+                    {Array.from({ length: sellosRequeridos }).map((_, index) => {
                       // Obtener la fecha del sello si existe
                       let stampDate = null;
                       try {

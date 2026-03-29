@@ -76,7 +76,11 @@ CREATE TABLE `config_default_puntos` (
 
 INSERT INTO `config_default_puntos` (`id`, `clave`, `valor`, `fecha_modificacion`) VALUES
 (1, 'euros_por_punto', 3.50, CURRENT_TIMESTAMP()),
-(2, 'puntos_bienvenida', 5.00, CURRENT_TIMESTAMP());
+(2, 'puntos_bienvenida', 5.00, CURRENT_TIMESTAMP()),
+(3, 'caducidad_puntos_meses', 12, CURRENT_TIMESTAMP()),
+(4, 'caducidad_carnet_inactividad_meses', 6, CURRENT_TIMESTAMP()),
+(5, 'caducidad_carnet_antiguedad_meses', 24, CURRENT_TIMESTAMP()),
+(6, 'sellos_requeridos_carnet', 6, CURRENT_TIMESTAMP());
 
 -- --------------------------------------------------------
 
@@ -198,6 +202,36 @@ CREATE TABLE `config_rewards_teller` (
 
 INSERT INTO `config_rewards_teller` (`clave`, `valor`, `descripcion`) VALUES
 ('teller_rewards', '{"showAllRewards":true,"rewardIds":[]}', 'Configuración de recompensas visibles en el cajero');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `config_niveles_cliente`
+--
+
+CREATE TABLE IF NOT EXISTS `config_niveles_cliente` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nivel` int(11) NOT NULL COMMENT 'Orden del nivel (1=Semilla, 2=Brote, 3=Hoja, 4=Flor)',
+  `nombre` varchar(50) NOT NULL COMMENT 'Nombre del nivel',
+  `icono` varchar(10) DEFAULT NULL COMMENT 'Emoji o icono del nivel',
+  `puntos_minimos` int(11) NOT NULL COMMENT 'Puntos mínimos para este nivel',
+  `puntos_maximos` int(11) DEFAULT NULL COMMENT 'Puntos máximos para este nivel (NULL = sin límite)',
+  `euros_compra_minima` decimal(10,2) NOT NULL DEFAULT 0.00 COMMENT 'Compra mínima semestral requerida',
+  `activo` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Si el nivel está activo',
+  `fecha_modificacion` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `nivel_unique` (`nivel`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Datos iniciales para la tabla `config_niveles_cliente`
+--
+
+INSERT INTO `config_niveles_cliente` (`nivel`, `nombre`, `icono`, `puntos_minimos`, `puntos_maximos`, `euros_compra_minima`, `activo`) VALUES
+(1, 'Semilla', '🌱', 0, 49, 0.00, 1),
+(2, 'Brote', '🌿', 50, 89, 150.00, 1),
+(3, 'Hoja', '🍃', 90, 169, 300.00, 1),
+(4, 'Flor', '🌸', 170, NULL, 500.00, 1);
 
 -- --------------------------------------------------------
 
@@ -628,6 +662,12 @@ ALTER TABLE `recompensas`
 -- AUTO_INCREMENT de la tabla `codigos_barras`
 --
 ALTER TABLE `codigos_barras`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `config_niveles_cliente`
+--
+ALTER TABLE `config_niveles_cliente`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --

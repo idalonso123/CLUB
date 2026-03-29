@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     // Consultar el valor de euros por punto y caducidades
     const configQuery = await executeQuery({
-      query: "SELECT clave, valor FROM config_default_puntos WHERE clave IN ('euros_por_punto', 'puntos_bienvenida', 'caducidad_puntos_meses', 'caducidad_carnet_inactividad_meses', 'caducidad_carnet_antiguedad_meses')",
+      query: "SELECT clave, valor FROM config_default_puntos WHERE clave IN ('euros_por_punto', 'puntos_bienvenida', 'caducidad_puntos_meses', 'caducidad_carnet_inactividad_meses', 'caducidad_carnet_antiguedad_meses', 'sellos_requeridos_carnet')",
       values: []
     });
 
@@ -25,6 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let caducidad_puntos_meses = 12;
     let caducidad_carnet_inactividad_meses = 6;
     let caducidad_carnet_antiguedad_meses = 24;
+    let sellos_requeridos_carnet = 6;
     
     if (Array.isArray(configQuery)) {
       configQuery.forEach(item => {
@@ -38,6 +39,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           caducidad_carnet_inactividad_meses = parseInt(item.valor, 10);
         } else if (item.clave === 'caducidad_carnet_antiguedad_meses') {
           caducidad_carnet_antiguedad_meses = parseInt(item.valor, 10);
+        } else if (item.clave === 'sellos_requeridos_carnet') {
+          sellos_requeridos_carnet = parseInt(item.valor, 10);
         }
       });
     }
@@ -58,6 +61,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
+    // Consultar los niveles de cliente
+    const clientLevelsQuery = await executeQuery({
+      query: "SELECT nivel, nombre, icono, puntos_minimos, puntos_maximos, euros_compra_minima, activo FROM config_niveles_cliente WHERE activo = 1 ORDER BY nivel ASC",
+      values: []
+    });
+
+    // Formatear los niveles de cliente
+    const clientLevels = Array.isArray(clientLevelsQuery) 
+      ? clientLevelsQuery.map(item => ({
+          nivel: item.nivel,
+          nombre: item.nombre,
+          icono: item.icono,
+          puntosMinimos: item.puntos_minimos,
+          puntosMaximos: item.puntos_maximos,
+          eurosCompraMinima: parseFloat(item.euros_compra_minima),
+          activo: item.activo === 1
+        }))
+      : [];
+
     // Preparar la respuesta con la configuración completa
     const response: any = {
       success: true,
@@ -68,8 +90,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         expiration: {
           caducidad_puntos_meses,
           caducidad_carnet_inactividad_meses,
-          caducidad_carnet_antiguedad_meses
-        }
+          caducidad_carnet_antiguedad_meses,
+          sellos_requeridos_carnet
+        },
+        clientLevels
       }
     };
 

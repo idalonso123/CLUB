@@ -2,144 +2,148 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getTermsUsageUrl } from '@/lib/utils/pageUtils';
+import { useClientLevels, ClientLevel } from '@/components/hooks/useExpirationConfig';
 
 interface ClientLevelDisplayProps {
   points: number;
   itemVariants: any;
 }
 
-// Definición de niveles según los Términos y Condiciones
-// NOTA: Los niveles básicos se definen aquí, pero los beneficios dinámicos se generan en el componente
-const BASE_LEVELS = [
-  {
-    name: 'Semilla',
-    minPoints: 0,
-    maxPoints: 49,
-    color: 'brown',
-    bgColor: 'bg-amber-100',
-    borderColor: 'border-amber-300',
-    textColor: 'text-amber-800',
-    icon: '🌱',
-    baseBenefits: ['Descuentos especiales para miembros del club'],
-    minPurchase: 0,
-    purchaseText: 'Sin compra mínima semestral'
-  },
-  {
-    name: 'Brote',
-    minPoints: 50,
-    maxPoints: 89,
-    color: 'green',
-    bgColor: 'bg-green-100',
-    borderColor: 'border-green-300',
-    textColor: 'text-green-800',
-    icon: '🌿',
-    baseBenefits: [
-      'Todo lo anterior',
-      'Acceso al catálogo de recompensas'
-    ],
-    minPurchase: 150,
-    purchaseText: 'Compra mínima semestral de 150€'
-  },
-  {
-    name: 'Hoja',
-    minPoints: 90,
-    maxPoints: 169,
-    color: 'emerald',
-    bgColor: 'bg-emerald-100',
-    borderColor: 'border-emerald-300',
-    textColor: 'text-emerald-800',
-    icon: '🍃',
-    baseBenefits: [
-      'Todo lo anterior',
-      'Descuentos exclusivos adicionales',
-      'Acceso a recompensas premium'
-    ],
-    minPurchase: 300,
-    purchaseText: 'Compra mínima semestral de 300€'
-  },
-  {
-    name: 'Flor',
-    minPoints: 170,
-    maxPoints: Infinity,
-    color: 'pink',
-    bgColor: 'bg-pink-100',
-    borderColor: 'border-pink-300',
-    textColor: 'text-pink-800',
-    icon: '🌸',
-    baseBenefits: [
-      'Todo lo anterior',
-      'Asesoramiento personalizado sobre productos',
-      'Acceso prioritario a eventos'
-    ],
-    minPurchase: 500,
-    purchaseText: 'Compra mínima semestral de 500€'
-  }
-];
+// Colores para cada nivel
+const LEVEL_COLORS: Record<string, { bgColor: string; borderColor: string; textColor: string }> = {
+  1: { bgColor: 'bg-amber-100', borderColor: 'border-amber-300', textColor: 'text-amber-800' },
+  2: { bgColor: 'bg-green-100', borderColor: 'border-green-300', textColor: 'text-green-800' },
+  3: { bgColor: 'bg-emerald-100', borderColor: 'border-emerald-300', textColor: 'text-emerald-800' },
+  4: { bgColor: 'bg-pink-100', borderColor: 'border-pink-300', textColor: 'text-pink-800' },
+};
+
+// Beneficios base por nivel (sin los puntos dinámicos)
+const BASE_BENEFITS: Record<number, string[]> = {
+  1: ['Descuentos especiales para miembros del club'],
+  2: ['Todo lo anterior', 'Acceso al catálogo de recompensas'],
+  3: ['Todo lo anterior', 'Descuentos exclusivos adicionales', 'Acceso a recompensas premium'],
+  4: ['Todo lo anterior', 'Asesoramiento personalizado sobre productos', 'Acceso prioritario a eventos'],
+};
 
 // Puntos y valor del cheque (valores fijos del sistema de recompensas)
 const POINTS_FOR_VOUCHER = 50;
-const VOUCHER_VALUE = 5; // Valor del cheque en euros
+const VOUCHER_VALUE = 5;
 
 const ClientLevelDisplay: React.FC<ClientLevelDisplayProps> = ({ points, itemVariants }) => {
+  const { clientLevels, loading, error } = useClientLevels();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
+  // Generar texto de compra mínima
+  const getPurchaseText = (level: ClientLevel): string => {
+    if (level.eurosCompraMinima === 0) {
+      return 'Sin compra mínima semestral';
+    }
+    return `Compra mínima semestral de ${level.eurosCompraMinima}€`;
+  };
+
   // Generar beneficios dinámicos para cada nivel
-  const getLevelBenefits = (baseBenefits: string[]) => {
-    // Añadir el beneficio del cheque solo para el nivel Brote (primer nivel con recompensas)
-    if (baseBenefits.includes('Acceso al catálogo de recompensas')) {
+  const getLevelBenefits = (level: ClientLevel): string[] => {
+    const benefits = BASE_BENEFITS[level.nivel] || [];
+    
+    // Añadir el beneficio del cheque solo para el nivel 2 (Brote) - primer nivel con recompensas
+    if (level.nivel === 2) {
       return [
-        ...baseBenefits,
+        ...benefits,
         `Cheque ${VOUCHER_VALUE}€ al alcanzar ${POINTS_FOR_VOUCHER} puntos`
       ];
     }
-    return baseBenefits;
+    return benefits;
   };
 
-  // Generar niveles con beneficios dinámicos
-  const LEVELS = BASE_LEVELS.map(level => ({
-    ...level,
-    benefits: getLevelBenefits(level.baseBenefits)
-  }));
-
   // Determinar el nivel actual basado en los puntos
-  const getCurrentLevel = (userPoints: number) => {
-    return LEVELS.find(level => 
-      userPoints >= level.minPoints && userPoints <= level.maxPoints
-    ) || LEVELS[0];
+  const getCurrentLevel = (userPoints: number): ClientLevel | null => {
+    if (!clientLevels || clientLevels.length === 0) return null;
+    
+    // Ordenar niveles por número
+    const sortedLevels = [...clientLevels].sort((a, b) => a.nivel - b.nivel);
+    
+    // Encontrar el nivel correspondiente
+    for (let i = sortedLevels.length - 1; i >= 0; i--) {
+      if (userPoints >= sortedLevels[i].puntosMinimos) {
+        return sortedLevels[i];
+      }
+    }
+    return sortedLevels[0];
   };
 
   // Obtener el siguiente nivel
-  const getNextLevel = (currentLevel: typeof LEVELS[0]) => {
-    const currentIndex = LEVELS.indexOf(currentLevel);
-    return currentIndex < LEVELS.length - 1 ? LEVELS[currentIndex + 1] : null;
+  const getNextLevel = (currentLevel: ClientLevel): ClientLevel | null => {
+    if (!clientLevels || clientLevels.length === 0) return null;
+    
+    const sortedLevels = [...clientLevels].sort((a, b) => a.nivel - b.nivel);
+    const currentIndex = sortedLevels.findIndex(l => l.nivel === currentLevel.nivel);
+    
+    return currentIndex < sortedLevels.length - 1 ? sortedLevels[currentIndex + 1] : null;
   };
 
   // Calcular progreso hacia el siguiente nivel
-  const getProgressToNextLevel = (currentLevel: typeof LEVELS[0], userPoints: number) => {
-    if (currentLevel.maxPoints === Infinity) {
+  const getProgressToNextLevel = (currentLevel: ClientLevel, userPoints: number): number => {
+    if (currentLevel.puntosMaximos === null) {
       return 100; // Ya está en el nivel máximo
     }
-    const pointsInCurrentLevel = userPoints - currentLevel.minPoints;
-    const pointsNeededForLevel = currentLevel.maxPoints - currentLevel.minPoints + 1;
+    const pointsInCurrentLevel = userPoints - currentLevel.puntosMinimos;
+    const pointsNeededForLevel = currentLevel.puntosMaximos - currentLevel.puntosMinimos + 1;
     return Math.min((pointsInCurrentLevel / pointsNeededForLevel) * 100, 100);
   };
 
   // Calcular puntos faltantes para el siguiente nivel
-  const getPointsToNextLevel = (currentLevel: typeof LEVELS[0], userPoints: number) => {
-    if (currentLevel.maxPoints === Infinity) {
+  const getPointsToNextLevel = (currentLevel: ClientLevel, userPoints: number): number => {
+    if (currentLevel.puntosMaximos === null) {
       return 0; // Ya está en el nivel máximo
     }
-    return currentLevel.maxPoints + 1 - userPoints;
+    return currentLevel.puntosMaximos + 1 - userPoints;
   };
 
+  // Obtener colores del nivel
+  const getLevelColors = (level: ClientLevel) => {
+    return LEVEL_COLORS[level.nivel] || LEVEL_COLORS[1];
+  };
+
+  if (loading) {
+    return (
+      <motion.div
+        className="bg-white p-5 border border-gray-300 rounded-lg mb-4 shadow-sm"
+        variants={itemVariants}
+      >
+        <h3 className="text-xl font-semibold mb-4 text-green-700">Nivel de Cliente</h3>
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700"></div>
+          <span className="ml-3 text-gray-500">Cargando niveles...</span>
+        </div>
+      </motion.div>
+    );
+  }
+
+  if (error || !clientLevels || clientLevels.length === 0) {
+    return (
+      <motion.div
+        className="bg-white p-5 border border-gray-300 rounded-lg mb-4 shadow-sm"
+        variants={itemVariants}
+      >
+        <h3 className="text-xl font-semibold mb-4 text-green-700">Nivel de Cliente</h3>
+        <p className="text-gray-500 text-center py-4">No se pudieron cargar los niveles</p>
+      </motion.div>
+    );
+  }
+
   const currentLevel = getCurrentLevel(points);
+  if (!currentLevel) return null;
+
   const nextLevel = getNextLevel(currentLevel);
   const progress = getProgressToNextLevel(currentLevel, points);
   const pointsToNext = getPointsToNextLevel(currentLevel, points);
+  const colors = getLevelColors(currentLevel);
+  const benefits = getLevelBenefits(currentLevel);
+  const purchaseText = getPurchaseText(currentLevel);
 
   return (
     <>
@@ -150,16 +154,16 @@ const ClientLevelDisplay: React.FC<ClientLevelDisplayProps> = ({ points, itemVar
         <h3 className="text-xl font-semibold mb-4 text-green-700">Nivel de Cliente</h3>
         
         {/* Nivel actual */}
-        <div className={`p-4 ${currentLevel.bgColor} rounded-lg border ${currentLevel.borderColor} mb-4`}>
+        <div className={`p-4 ${colors.bgColor} rounded-lg border ${colors.borderColor} mb-4`}>
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center">
-              <span className="text-3xl mr-3">{currentLevel.icon}</span>
+              <span className="text-3xl mr-3">{currentLevel.icono}</span>
               <div>
-                <div className={`font-bold text-lg ${currentLevel.textColor}`}>
-                  Nivel {currentLevel.name}
+                <div className={`font-bold text-lg ${colors.textColor}`}>
+                  Nivel {currentLevel.nombre}
                 </div>
                 <div className="text-sm text-gray-600">
-                  {currentLevel.minPoints} - {currentLevel.maxPoints === Infinity ? '∞' : currentLevel.maxPoints} puntos
+                  {currentLevel.puntosMinimos} - {currentLevel.puntosMaximos === null ? '∞' : currentLevel.puntosMaximos} puntos
                 </div>
               </div>
             </div>
@@ -173,12 +177,12 @@ const ClientLevelDisplay: React.FC<ClientLevelDisplayProps> = ({ points, itemVar
           {nextLevel && (
             <div className="mt-3">
               <div className="flex justify-between text-xs text-gray-600 mb-1">
-                <span>Progreso hacia {nextLevel.name}</span>
+                <span>Progreso hacia {nextLevel.nombre}</span>
                 <span>{Math.round(progress)}%</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2.5">
                 <motion.div
-                  className={`h-2.5 rounded-full ${currentLevel.bgColor.replace('100', '500')}`}
+                  className={`h-2.5 rounded-full ${colors.bgColor.replace('100', '500')}`}
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
                   transition={{ duration: 1, ease: "easeOut" as const }}
@@ -186,8 +190,8 @@ const ClientLevelDisplay: React.FC<ClientLevelDisplayProps> = ({ points, itemVar
               </div>
               <div className="text-xs text-gray-500 mt-1">
                 {pointsToNext > 0 
-                  ? `${pointsToNext} puntos para alcanzar ${nextLevel.name}`
-                  : `¡Has alcanzado ${nextLevel.name}!`
+                  ? `${pointsToNext} puntos para alcanzar ${nextLevel.nombre}`
+                  : `¡Has alcanzado ${nextLevel.nombre}!`
                 }
               </div>
             </div>
@@ -209,7 +213,7 @@ const ClientLevelDisplay: React.FC<ClientLevelDisplayProps> = ({ points, itemVar
             <span className="font-medium text-gray-700">Mantenimiento de nivel</span>
           </div>
           <p className="text-sm text-gray-600">
-            {currentLevel.purchaseText}
+            {purchaseText}
           </p>
         </div>
 
@@ -220,7 +224,7 @@ const ClientLevelDisplay: React.FC<ClientLevelDisplayProps> = ({ points, itemVar
             <span className="font-medium text-gray-700">Beneficios de tu nivel</span>
           </div>
           <ul className="text-sm text-gray-600 space-y-1">
-            {currentLevel.benefits.map((benefit, index) => (
+            {benefits.map((benefit, index) => (
               <li key={index} className="flex items-start">
                 <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
                 <span>{benefit}</span>
@@ -236,29 +240,30 @@ const ClientLevelDisplay: React.FC<ClientLevelDisplayProps> = ({ points, itemVar
             <span className="font-medium text-gray-700">Todos los niveles</span>
           </div>
           <div className="space-y-2">
-            {LEVELS.map((level, index) => {
-              const isActive = level.name === currentLevel.name;
-              const isPast = points > level.maxPoints;
+            {clientLevels.sort((a, b) => a.nivel - b.nivel).map((level) => {
+              const isActive = level.nivel === currentLevel.nivel;
+              const isPast = points > (level.puntosMaximos || level.puntosMinimos);
+              const levelColors = getLevelColors(level);
               return (
                 <div 
-                  key={index}
+                  key={level.nivel}
                   className={`flex items-center justify-between p-2 rounded ${
-                    isActive ? level.bgColor : isPast ? 'bg-gray-100 opacity-60' : 'bg-white'
+                    isActive ? levelColors.bgColor : isPast ? 'bg-gray-100 opacity-60' : 'bg-white'
                   }`}
                 >
                   <div className="flex items-center">
-                    <span className="text-xl mr-2">{level.icon}</span>
+                    <span className="text-xl mr-2">{level.icono}</span>
                     <div>
-                      <div className={`font-medium ${isActive ? level.textColor : 'text-gray-700'}`}>
-                        {level.name}
+                      <div className={`font-medium ${isActive ? levelColors.textColor : 'text-gray-700'}`}>
+                        {level.nombre}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {level.minPoints} - {level.maxPoints === Infinity ? '∞' : level.maxPoints} pts
+                        {level.puntosMinimos} - {level.puntosMaximos === null ? '∞' : level.puntosMaximos} pts
                       </div>
                     </div>
                   </div>
                   {isActive && (
-                    <span className={`text-xs px-2 py-1 rounded-full ${level.bgColor} ${level.textColor} font-medium`}>
+                    <span className={`text-xs px-2 py-1 rounded-full ${levelColors.bgColor} ${levelColors.textColor} font-medium`}>
                       Actual
                     </span>
                   )}

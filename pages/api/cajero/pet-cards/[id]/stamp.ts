@@ -30,8 +30,12 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     if (petCard.completed) {
       return res.status(400).json({ success: false, message: 'Este carnet ya está completado' });
     }
-    if (petCard.stamps >= 6) {
-      return res.status(400).json({ success: false, message: 'Este carnet ya tiene 6 sellos' });
+    // Obtener configuración de caducidad
+    const expirationConfig = await getExpirationConfig();
+    const sellosRequeridos = expirationConfig.sellos_requeridos_carnet || 6;
+
+    if (petCard.stamps >= sellosRequeridos) {
+      return res.status(400).json({ success: false, message: `Este carnet ya tiene ${sellosRequeridos} sellos` });
     }
     // Asegurar que stampDates sea siempre un array válido
     let stampDates = [];

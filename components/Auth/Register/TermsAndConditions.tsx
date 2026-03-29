@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import Link from 'next/link';
+import { getTermsUrl } from '@/lib/utils/pageUtils';
 
 interface TermsAndConditionsProps {
   formData: {
@@ -27,7 +28,7 @@ const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({ formData, error
         />
         <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
           Acepto los{" "}
-          <Link href="/pdf/Términos y Condiciones - Club ViveVerde.pdf" target="_blank" rel="noopener noreferrer">
+          <Link href={getTermsUrl()} target="_blank" rel="noopener noreferrer">
             <motion.span className="text-green-800 hover:text-green-700 font-medium cursor-pointer"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}

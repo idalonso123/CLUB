@@ -33,6 +33,7 @@ const PetCardModal: React.FC<PetCardModalProps> = ({
   // Valores por defecto si no se ha cargado la configuración
   const mesesInactividad = expirationConfig?.caducidad_carnet_inactividad_meses || 6;
   const mesesAntiguedad = expirationConfig?.caducidad_carnet_antiguedad_meses || 24;
+  const sellosRequeridos = expirationConfig?.sellos_requeridos_carnet || 6;
   
   // Función para verificar si un carnet ha expirado (por inactividad o por antigüedad máxima)
   const isCardExpired = (card: PetCard): boolean => {
@@ -372,10 +373,10 @@ const PetCardModal: React.FC<PetCardModalProps> = ({
                               <>
                                 <div className="mb-4">
                                   <div className="text-sm text-gray-600 mb-2">
-                                    Sellos: {card.stamps}/6
+                                    Sellos: {card.stamps}/{sellosRequeridos}
                                   </div>
                                   <div className="grid grid-cols-5 gap-2">
-                                    {Array.from({ length: 6 }).map((_, index) => {
+                                    {Array.from({ length: sellosRequeridos }).map((_, index) => {
                                       // Obtener la fecha del sello si existe
                                       let stampDate = null;
                                       try {
@@ -462,7 +463,7 @@ const PetCardModal: React.FC<PetCardModalProps> = ({
                                   
                                   {!card.completed ? (
                                     <div className="flex space-x-2">
-                                      {card.stamps < 6 && (
+                                      {card.stamps < sellosRequeridos && (
                                         <motion.button
                                           whileHover={{ scale: 1.05 }}
                                           whileTap={{ scale: 0.95 }}
@@ -488,7 +489,7 @@ const PetCardModal: React.FC<PetCardModalProps> = ({
                                         </motion.button>
                                       )}
                                       
-                                      {card.stamps === 6 && (
+                                      {card.stamps === sellosRequeridos && (
                                         <motion.button
                                           whileHover={{ scale: 1.05 }}
                                           whileTap={{ scale: 0.95 }}

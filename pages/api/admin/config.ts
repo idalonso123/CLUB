@@ -13,7 +13,7 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   // PATCH: Actualizar la configuración
   if (req.method === "PATCH") {
     try {
-      const { eurosPorPunto, puntosBienvenida, tellerRewards, expiration } = req.body;
+      const { eurosPorPunto, puntosBienvenida, tellerRewards, expiration, clientLevels } = req.body;
       let updated = false;
 
       // Procesar configuraciones de caducidad PRIMERO (antes de los returns)
@@ -27,17 +27,18 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
             });
           }
 
-          const { caducidad_puntos_meses, caducidad_carnet_inactividad_meses, caducidad_carnet_antiguedad_meses } = expiration;
+          const { caducidad_puntos_meses, caducidad_carnet_inactividad_meses, caducidad_carnet_antiguedad_meses, sellos_requeridos_carnet } = expiration;
 
           // Validar valores
           if (
             typeof caducidad_puntos_meses !== 'number' || !Number.isInteger(caducidad_puntos_meses) || caducidad_puntos_meses < 1 ||
             typeof caducidad_carnet_inactividad_meses !== 'number' || !Number.isInteger(caducidad_carnet_inactividad_meses) || caducidad_carnet_inactividad_meses < 1 ||
-            typeof caducidad_carnet_antiguedad_meses !== 'number' || !Number.isInteger(caducidad_carnet_antiguedad_meses) || caducidad_carnet_antiguedad_meses < 1
+            typeof caducidad_carnet_antiguedad_meses !== 'number' || !Number.isInteger(caducidad_carnet_antiguedad_meses) || caducidad_carnet_antiguedad_meses < 1 ||
+            typeof sellos_requeridos_carnet !== 'number' || !Number.isInteger(sellos_requeridos_carnet) || sellos_requeridos_carnet < 1 || sellos_requeridos_carnet > 20
           ) {
             return res.status(400).json({
               success: false,
-              message: "Los valores de caducidad deben ser números enteros positivos",
+              message: "Los valores de caducidad deben ser números enteros positivos, y los sellos requeridos deben estar entre 1 y 20",
             });
           }
 
@@ -138,6 +139,25 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
             await executeQuery({
               query: "INSERT INTO config_default_puntos (clave, valor) VALUES ('caducidad_carnet_antiguedad_meses', ?)",
               values: [caducidad_carnet_antiguedad_meses],
+            });
+          }
+
+          // Guardar configuración de sellos requeridos para completar el carnet
+          const checkSellosResult = await executeQuery({
+            query: "SELECT COUNT(*) as count FROM config_default_puntos WHERE clave = 'sellos_requeridos_carnet'",
+            values: [],
+          });
+          const sellosConfigExists = Array.isArray(checkSellosResult) && checkSellosResult.length > 0 && checkSellosResult[0].count > 0;
+          
+          if (sellosConfigExists) {
+            await executeQuery({
+              query: "UPDATE config_default_puntos SET valor = ?, fecha_modificacion = CURRENT_TIMESTAMP WHERE clave = 'sellos_requeridos_carnet'",
+              values: [sellos_requeridos_carnet],
+            });
+          } else {
+            await executeQuery({
+              query: "INSERT INTO config_default_puntos (clave, valor) VALUES ('sellos_requeridos_carnet', ?)",
+              values: [sellos_requeridos_carnet],
             });
           }
 
@@ -291,6 +311,101 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         }
       }
 
+      // Procesar niveles de cliente
+      if (clientLevels !== undefined) {
+        if (!Array.isArray(clientLevels)) {
+          return res.status(400).json({
+            success: false,
+            message: "Los niveles de cliente deben ser un array",
+          });
+        }
+
+        try {
+          // Validar que haya exactamente 4 niveles
+          if (clientLevels.length !== 4) {
+            return res.status(400).json({
+              success: false,
+              message: "Debe haber exactamente 4 niveles de cliente",
+            });
+          }
+
+          // Validar cada nivel
+          for (let i = 0; i < clientLevels.length; i++) {
+            const level = clientLevels[i];
+            
+            if (
+              typeof level.nivel !== 'number' ||
+              typeof level.puntosMinimos !== 'number' ||
+              !Number.isInteger(level.puntosMinimos) ||
+              level.puntosMinimos < 0 ||
+              (level.puntosMaximos !== null && (!Number.isInteger(level.puntosMaximos) || level.puntosMaximos < level.puntosMinimos)) ||
+              typeof level.eurosCompraMinima !== 'number' ||
+              level.eurosCompraMinima < 0
+            ) {
+              return res.status(400).json({
+                success: false,
+                message: `Datos inválidos para el nivel ${i + 1}`,
+              });
+            }
+
+            // Validar que no se solapen los niveles
+            if (i > 0) {
+              const prevLevel = clientLevels[i - 1];
+              if (level.puntosMinimos <= (prevLevel.puntosMaximos || prevLevel.puntosMinimos)) {
+                return res.status(400).json({
+                  success: false,
+                  message: `El nivel ${i + 1} no puede tener puntos mínimos menores o iguales al máximo del nivel anterior`,
+                });
+              }
+            }
+
+            // Validar que los euros de compra mínima sean crecientes
+            if (i > 0) {
+              const prevLevel = clientLevels[i - 1];
+              if (level.eurosCompraMinima < prevLevel.eurosCompraMinima) {
+                return res.status(400).json({
+                  success: false,
+                  message: `El nivel ${i + 1} debe tener una compra mínima mayor o igual que el nivel anterior`,
+                });
+              }
+            }
+          }
+
+          // Actualizar cada nivel en la base de datos
+          for (const level of clientLevels) {
+            await executeQuery({
+              query: `UPDATE config_niveles_cliente SET 
+                nombre = ?, 
+                icono = ?, 
+                puntos_minimos = ?, 
+                puntos_maximos = ?, 
+                euros_compra_minima = ?,
+                activo = ?,
+                fecha_modificacion = CURRENT_TIMESTAMP 
+              WHERE nivel = ?`,
+              values: [
+                level.nombre,
+                level.icono || '',
+                level.puntosMinimos,
+                level.puntosMaximos,
+                level.eurosCompraMinima,
+                level.activo ? 1 : 0,
+                level.nivel
+              ],
+            });
+          }
+
+          updated = true;
+        } catch (error) {
+          console.error("Error al actualizar los niveles de cliente:", error);
+          return res.status(500).json({
+            success: false,
+            message: "Error al actualizar los niveles de cliente",
+            error: (error as Error).message,
+          });
+        }
+      }
+
       if (updated) {
         return res.status(200).json({
           success: true,
@@ -346,6 +461,11 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         values: [],
       });
 
+      const sellosRequeridosCarnetRows = await executeQuery({
+        query: "SELECT valor FROM config_default_puntos WHERE clave = 'sellos_requeridos_carnet' LIMIT 1",
+        values: [],
+      });
+
       // Parsear la configuración de recompensas o usar valores predeterminados
       let tellerRewards = { showAllRewards: true, rewardIds: [] };
       if (Array.isArray(tellerRewardsQuery) && tellerRewardsQuery.length > 0) {
@@ -377,6 +497,29 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
         ? parseInt(caducidadCarnetAntiguedadRows[0].valor) 
         : 24;
 
+      const sellos_requeridos_carnet = Array.isArray(sellosRequeridosCarnetRows) && sellosRequeridosCarnetRows.length > 0 
+        ? parseInt(sellosRequeridosCarnetRows[0].valor) 
+        : 6;
+
+      // Obtener niveles de cliente
+      const clientLevelsQuery = await executeQuery({
+        query: "SELECT nivel, nombre, icono, puntos_minimos, puntos_maximos, euros_compra_minima, activo FROM config_niveles_cliente ORDER BY nivel ASC",
+        values: [],
+      });
+
+      // Formatear los niveles de cliente
+      const clientLevels = Array.isArray(clientLevelsQuery) 
+        ? clientLevelsQuery.map(item => ({
+            nivel: item.nivel,
+            nombre: item.nombre,
+            icono: item.icono,
+            puntosMinimos: item.puntos_minimos,
+            puntosMaximos: item.puntos_maximos,
+            eurosCompraMinima: parseFloat(item.euros_compra_minima),
+            activo: item.activo === 1
+          }))
+        : [];
+
       return res.status(200).json({
         success: true,
         config: {
@@ -386,8 +529,10 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
           expiration: {
             caducidad_puntos_meses,
             caducidad_carnet_inactividad_meses,
-            caducidad_carnet_antiguedad_meses
-          }
+            caducidad_carnet_antiguedad_meses,
+            sellos_requeridos_carnet
+          },
+          clientLevels
         }
       });
     } catch (error) {

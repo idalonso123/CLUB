@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Modal from '@/components/Common/Modal/Modal';
-import useConfig from '@/components/Admin/Config/hooks/useConfig';
+import useConfig, { ClientLevel } from '@/components/Admin/Config/hooks/useConfig';
 import { Reward } from '@/types/rewards';
 
 interface ConfigModalProps {
@@ -11,12 +11,13 @@ interface ConfigModalProps {
 
 const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose }) => {
   // Estado para controlar las pestañas
-  const [activeTab, setActiveTab] = useState('points'); // 'points', 'rewards' o 'expiration'
+  const [activeTab, setActiveTab] = useState('points'); // 'points', 'rewards', 'expiration' o 'levels'
   
   // Usar el hook de configuración
   const { 
     config, 
-    updateConfig, 
+    updateConfig,
+    updateClientLevel, 
     loadConfig, 
     saveConfig, 
     isLoading, 
@@ -227,6 +228,16 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose }) => {
                 >
                   <i className="fas fa-clock mr-1 sm:mr-2"></i>
                   <span>Caducidades</span>
+                </button>
+                <button
+                  type="button"
+                  className={`px-3 sm:px-6 py-2 sm:py-2.5 text-sm sm:text-base font-medium inline-flex items-center whitespace-nowrap transition-colors duration-200 flex-1 sm:flex-none justify-center sm:justify-start ${activeTab === 'levels' 
+                    ? 'text-green-800 border-b-2 border-green-800' 
+                    : 'text-gray-500 hover:text-gray-700 border-b-2 border-transparent'}`}
+                  onClick={() => setActiveTab('levels')}
+                >
+                  <i className="fas fa-layer-group mr-1 sm:mr-2"></i>
+                  <span>Niveles</span>
                 </button>
               </div>
             </div>
@@ -1062,6 +1073,278 @@ const ConfigModal: React.FC<ConfigModalProps> = ({ isOpen, onClose }) => {
                   <p className="text-xs text-red-700">
                     Al guardar estos cambios, se actualizarán <strong>TODOS los registros existentes</strong> de puntos y carnets de mascota para que utilicen las nuevas fechas de caducidad. Esta acción no se puede deshacer.
                   </p>
+                </div>
+
+                {/* Configuración de sellos requeridos para completar el carnet */}
+                <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm mt-4">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="sellos_requeridos_carnet" className="block text-sm font-medium text-gray-700 flex items-center">
+                      <i className="fas fa-stamp mr-2 text-blue-600"></i>
+                      Sellos Requeridos para Completar el Carnet
+                    </label>
+                    <span className="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-medium shadow-sm">
+                      Carnets Mascota
+                    </span>
+                  </div>
+
+                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 mt-3 mb-3">
+                    <p className="text-xs text-blue-700">
+                      Define cuántos sellos debe tener un carnet de mascota para considerarse completo y recibir un saco gratuito.
+                    </p>
+                  </div>
+                  
+                  {/* Control numérico mejorado */}
+                  <div className="space-y-4 mt-3">
+                    <div className="flex items-center">
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            sellos_requeridos_carnet: Math.max(1, config.expiration.sellos_requeridos_carnet - 1) 
+                          }
+                        })}
+                        className="px-2 py-2 bg-gray-100 rounded-l-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300"
+                        whileHover={{ backgroundColor: "#e5e7eb" }}
+                        whileTap={{ scale: 0.95 }}
+                        disabled={config.expiration.sellos_requeridos_carnet <= 1}
+                      >
+                        <i className="fas fa-minus text-gray-600"></i>
+                      </motion.button>
+                      <input
+                        type="number"
+                        id="sellos_requeridos_carnet"
+                        name="sellos_requeridos_carnet"
+                        value={config.expiration.sellos_requeridos_carnet}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (!isNaN(value) && value >= 1 && value <= 20) {
+                            updateConfig({ 
+                              expiration: { 
+                                ...config.expiration, 
+                                sellos_requeridos_carnet: value 
+                              }
+                            });
+                          }
+                        }}
+                        step="1"
+                        min="1"
+                        max="20"
+                        className="block w-full px-3 py-2 border border-gray-300 text-center focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                      />
+                      <motion.button
+                        type="button"
+                        onClick={() => updateConfig({ 
+                          expiration: { 
+                            ...config.expiration, 
+                            sellos_requeridos_carnet: Math.min(20, config.expiration.sellos_requeridos_carnet + 1) 
+                          }
+                        })}
+                        className="px-2 py-2 bg-gray-100 rounded-r-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 border border-gray-300"
+                        whileHover={{ backgroundColor: "#e5e7eb" }}
+                        whileTap={{ scale: 0.95 }}
+                        disabled={config.expiration.sellos_requeridos_carnet >= 20}
+                      >
+                        <i className="fas fa-plus text-gray-600"></i>
+                      </motion.button>
+                    </div>
+
+                    <div className="grid grid-cols-5 gap-2">
+                      {[4, 5, 6, 8, 10].map((num) => (
+                        <motion.button
+                          key={num}
+                          type="button"
+                          onClick={() => updateConfig({ 
+                            expiration: { 
+                              ...config.expiration, 
+                              sellos_requeridos_carnet: num 
+                            }
+                          })}
+                          className={`px-2 py-1 rounded text-xs font-medium ${config.expiration.sellos_requeridos_carnet === num ? 'bg-blue-600 text-white border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-300 hover:bg-blue-200'}`}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          {num} sellos
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Ejemplo visual */}
+                  <div className="mt-4 text-sm">
+                    <div className="flex justify-between items-center p-3 rounded-md bg-blue-50 text-blue-800 shadow-sm">
+                      <span className="flex items-center">
+                        <i className="fas fa-lightbulb mr-2 text-blue-600"></i>
+                        Ejemplo:
+                      </span>
+                      <span className="font-medium bg-white bg-opacity-50 px-2 py-1 rounded-md text-xs">
+                        Con {config.expiration.sellos_requeridos_carnet} compras selladas, el siguiente saco es gratis
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Contenido de la pestaña de Niveles de Cliente */}
+            {activeTab === 'levels' && (
+              <div>
+                {/* Header explicativo */}
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg border border-purple-100 shadow-sm">
+                  <h3 className="text-sm font-semibold text-purple-800 flex items-center mb-2">
+                    <i className="fas fa-layer-group mr-2"></i>
+                    Configuración de Niveles de Cliente
+                  </h3>
+                  <p className="text-xs text-purple-700">
+                    Define los puntos necesarios y la compra mínima semestral para cada nivel de cliente.
+                    Los niveles deben ser crecientes y no pueden solaparse.
+                  </p>
+                </div>
+
+                {/* Lista de niveles */}
+                <div className="space-y-4 mt-4">
+                  {config.clientLevels && config.clientLevels.length > 0 ? (
+                    config.clientLevels
+                      .sort((a, b) => a.nivel - b.nivel)
+                      .map((level) => (
+                        <div 
+                          key={level.nivel} 
+                          className={`bg-white rounded-lg p-4 border-2 ${
+                            level.nivel === 1 ? 'border-amber-300' :
+                            level.nivel === 2 ? 'border-green-300' :
+                            level.nivel === 3 ? 'border-emerald-300' :
+                            'border-pink-300'
+                          } shadow-sm`}
+                        >
+                          {/* Header del nivel */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center">
+                              <span className="text-2xl mr-2">{level.icono}</span>
+                              <span className="font-semibold text-gray-800">{level.nombre}</span>
+                            </div>
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              level.nivel === 1 ? 'bg-amber-100 text-amber-800' :
+                              level.nivel === 2 ? 'bg-green-100 text-green-800' :
+                              level.nivel === 3 ? 'bg-emerald-100 text-emerald-800' :
+                              'bg-pink-100 text-pink-800'
+                            }`}>
+                              Nivel {level.nivel}
+                            </span>
+                          </div>
+
+                          {/* Campos editables */}
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            {/* Puntos mínimos */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Puntos mínimos
+                              </label>
+                              <input
+                                type="number"
+                                value={level.puntosMinimos}
+                                onChange={(e) => {
+                                  const value = parseInt(e.target.value) || 0;
+                                  updateClientLevel(level.nivel, { puntosMinimos: value });
+                                }}
+                                min="0"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                              />
+                            </div>
+
+                            {/* Puntos máximos */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Puntos máximos (vacío = sin límite)
+                              </label>
+                              <input
+                                type="number"
+                                value={level.puntosMaximos === null ? '' : level.puntosMaximos}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  updateClientLevel(level.nivel, { puntosMaximos: value === '' ? null : (parseInt(value) || 0) });
+                                }}
+                                min="0"
+                                placeholder="∞"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                              />
+                            </div>
+
+                            {/* Compra mínima */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 mb-1">
+                                Compra mínima semestral (€)
+                              </label>
+                              <input
+                                type="number"
+                                value={level.eurosCompraMinima}
+                                onChange={(e) => {
+                                  const value = parseFloat(e.target.value) || 0;
+                                  updateClientLevel(level.nivel, { eurosCompraMinima: value });
+                                }}
+                                min="0"
+                                step="0.01"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Rango de puntos */}
+                          <div className="mt-2 text-xs text-gray-500">
+                            Rango: {level.puntosMinimos} - {level.puntosMaximos === null ? '∞' : level.puntosMaximos} puntos
+                          </div>
+                        </div>
+                      ))
+                  ) : (
+                    <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                      <p className="text-sm text-yellow-800">
+                        <i className="fas fa-exclamation-triangle mr-2"></i>
+                        No se encontraron niveles configurados. Por favor, contacta con el administrador.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Advertencia sobre validación */}
+                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 mt-4">
+                  <h4 className="text-sm font-semibold text-purple-800 flex items-center mb-2">
+                    <i className="fas fa-info-circle mr-2"></i>
+                    Información importante
+                  </h4>
+                  <ul className="text-xs text-purple-700 space-y-1">
+                    <li>• El primer nivel debe tener puntos mínimos en 0</li>
+                    <li>• Los niveles deben ser consecutivos y no pueden solaparse</li>
+                    <li>• El último nivel puede tener puntos máximos ilimitados (dejar vacío)</li>
+                    <li>• La compra mínima debe ser creciente para cada nivel</li>
+                  </ul>
+                </div>
+
+                {/* Preview de los niveles */}
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mt-4">
+                  <h4 className="text-sm font-semibold text-gray-700 flex items-center mb-3">
+                    <i className="fas fa-eye mr-2"></i>
+                    Vista previa
+                  </h4>
+                  <div className="space-y-2">
+                    {config.clientLevels && config.clientLevels.length > 0 && (
+                      config.clientLevels
+                        .sort((a, b) => a.nivel - b.nivel)
+                        .map((level) => (
+                          <div 
+                            key={`preview-${level.nivel}`}
+                            className="flex items-center justify-between text-sm bg-white p-2 rounded"
+                          >
+                            <div className="flex items-center">
+                              <span className="mr-2">{level.icono}</span>
+                              <span className="font-medium">{level.nombre}</span>
+                            </div>
+                            <div className="text-gray-600">
+                              {level.puntosMinimos} - {level.puntosMaximos === null ? '∞' : level.puntosMaximos} pts
+                              {' | '}
+                              {level.eurosCompraMinima === 0 ? 'Sin mín.' : `${level.eurosCompraMinima}€ mín.`}
+                            </div>
+                          </div>
+                        ))
+                    )}
+                  </div>
                 </div>
               </div>
             )}

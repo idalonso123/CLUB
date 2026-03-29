@@ -126,7 +126,7 @@ export function privacyPolicyTitle(): string {
  * Genera el texto de términos de uso de tarjeta
  */
 export function termsUsageTitle(): string {
-  return `Términos y Condiciones de Uso – Tarjeta ${COMPANY_CONFIG.name}`;
+  return `Términos y Condiciones de Uso – ${COMPANY_CONFIG.name}`;
 }
 
 /**

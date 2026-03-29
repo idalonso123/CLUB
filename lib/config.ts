@@ -84,7 +84,7 @@ export const SITE_CONFIG = {
     contactPage: process.env.NEXT_PUBLIC_EXTERNAL_CONTACT_URL || 'https://viveverde.es/contacta/',
     privacyPolicy: process.env.NEXT_PUBLIC_PRIVACY_POLICY_URL || '/pdf/Política de Privacidad - Club ViveVerde.pdf',
     termsAndConditions: process.env.NEXT_PUBLIC_TERMS_URL || '/pdf/Términos y Condiciones - Club ViveVerde.pdf',
-    termsAndConditionsUsage: process.env.NEXT_PUBLIC_TERMS_USAGE_URL || '/pdf/Términos y Condiciones de Uso – Tarjeta Club ViveVerde.pdf',
+    termsAndConditionsUsage: process.env.NEXT_PUBLIC_TERMS_USAGE_URL || '/terminos-condiciones-uso',
   },
   
   /** Configuración SEO */

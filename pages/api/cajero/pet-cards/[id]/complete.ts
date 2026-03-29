@@ -30,8 +30,12 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     if (petCard.completed) {
       return res.status(400).json({ success: false, message: 'Este carnet ya está completado' });
     }
-    if (petCard.stamps < 6) {
-      return res.status(400).json({ success: false, message: 'Este carnet aún no tiene 6 sellos' });
+    // Obtener configuración de caducidad para calcular maxExpirationDate
+    const expirationConfig = await getExpirationConfig();
+    const sellosRequeridos = expirationConfig.sellos_requeridos_carnet || 6;
+
+    if (petCard.stamps < sellosRequeridos) {
+      return res.status(400).json({ success: false, message: `Este carnet aún no tiene ${sellosRequeridos} sellos` });
     }
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     await executeQuery({
@@ -47,9 +51,6 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       values: [Number(id)]
     });
     const rawPetCard = (updatedPetCardsResult as any[])[0];
-    
-    // Obtener configuración de caducidad para calcular maxExpirationDate
-    const expirationConfig = await getExpirationConfig();
     
     // Calcular maxExpirationDate (antigüedad máxima desde creación - no cambia al completar)
     let maxExpirationDate = null;

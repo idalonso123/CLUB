@@ -4,6 +4,7 @@ interface ExpirationConfig {
   caducidad_puntos_meses: number;
   caducidad_carnet_inactividad_meses: number;
   caducidad_carnet_antiguedad_meses: number;
+  sellos_requeridos_carnet: number;
 }
 
 interface FullConfig {
@@ -33,6 +34,11 @@ export async function getExpirationConfig(): Promise<ExpirationConfig> {
       values: [],
     }) as Array<{ valor: string }>;
 
+    const sellosRequeridosResult = await executeQuery({
+      query: "SELECT valor FROM config_default_puntos WHERE clave = 'sellos_requeridos_carnet' LIMIT 1",
+      values: [],
+    }) as Array<{ valor: string }>;
+
     return {
       caducidad_puntos_meses: Array.isArray(caducidadPuntosResult) && caducidadPuntosResult.length > 0
         ? parseInt(caducidadPuntosResult[0].valor)
@@ -43,6 +49,9 @@ export async function getExpirationConfig(): Promise<ExpirationConfig> {
       caducidad_carnet_antiguedad_meses: Array.isArray(caducidadAntiguedadResult) && caducidadAntiguedadResult.length > 0
         ? parseInt(caducidadAntiguedadResult[0].valor)
         : 24,
+      sellos_requeridos_carnet: Array.isArray(sellosRequeridosResult) && sellosRequeridosResult.length > 0
+        ? parseInt(sellosRequeridosResult[0].valor)
+        : 6,
     };
   } catch (error) {
     console.error('Error al obtener configuración de caducidad, usando valores por defecto:', error);
@@ -50,6 +59,7 @@ export async function getExpirationConfig(): Promise<ExpirationConfig> {
       caducidad_puntos_meses: 12,
       caducidad_carnet_inactividad_meses: 6,
       caducidad_carnet_antiguedad_meses: 24,
+      sellos_requeridos_carnet: 6,
     };
   }
 }
@@ -91,6 +101,7 @@ export async function getFullConfig(): Promise<FullConfig> {
         caducidad_puntos_meses: 12,
         caducidad_carnet_inactividad_meses: 6,
         caducidad_carnet_antiguedad_meses: 24,
+        sellos_requeridos_carnet: 6,
       },
     };
   }
