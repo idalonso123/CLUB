@@ -9,7 +9,8 @@ interface ClientLevelDisplayProps {
 }
 
 // Definición de niveles según los Términos y Condiciones
-const LEVELS = [
+// NOTA: Los niveles básicos se definen aquí, pero los beneficios dinámicos se generan en el componente
+const BASE_LEVELS = [
   {
     name: 'Semilla',
     minPoints: 0,
@@ -19,7 +20,7 @@ const LEVELS = [
     borderColor: 'border-amber-300',
     textColor: 'text-amber-800',
     icon: '🌱',
-    benefits: ['Descuentos especiales para miembros del club'],
+    baseBenefits: ['Descuentos especiales para miembros del club'],
     minPurchase: 0,
     purchaseText: 'Sin compra mínima semestral'
   },
@@ -32,9 +33,8 @@ const LEVELS = [
     borderColor: 'border-green-300',
     textColor: 'text-green-800',
     icon: '🌿',
-    benefits: [
+    baseBenefits: [
       'Todo lo anterior',
-      'Cheque 5€ al alcanzar 50 puntos',
       'Acceso al catálogo de recompensas'
     ],
     minPurchase: 150,
@@ -49,7 +49,7 @@ const LEVELS = [
     borderColor: 'border-emerald-300',
     textColor: 'text-emerald-800',
     icon: '🍃',
-    benefits: [
+    baseBenefits: [
       'Todo lo anterior',
       'Descuentos exclusivos adicionales',
       'Acceso a recompensas premium'
@@ -66,7 +66,7 @@ const LEVELS = [
     borderColor: 'border-pink-300',
     textColor: 'text-pink-800',
     icon: '🌸',
-    benefits: [
+    baseBenefits: [
       'Todo lo anterior',
       'Asesoramiento personalizado sobre productos',
       'Acceso prioritario a eventos'
@@ -76,12 +76,34 @@ const LEVELS = [
   }
 ];
 
+// Puntos y valor del cheque (valores fijos del sistema de recompensas)
+const POINTS_FOR_VOUCHER = 50;
+const VOUCHER_VALUE = 5; // Valor del cheque en euros
+
 const ClientLevelDisplay: React.FC<ClientLevelDisplayProps> = ({ points, itemVariants }) => {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Generar beneficios dinámicos para cada nivel
+  const getLevelBenefits = (baseBenefits: string[]) => {
+    // Añadir el beneficio del cheque solo para el nivel Brote (primer nivel con recompensas)
+    if (baseBenefits.includes('Acceso al catálogo de recompensas')) {
+      return [
+        ...baseBenefits,
+        `Cheque ${VOUCHER_VALUE}€ al alcanzar ${POINTS_FOR_VOUCHER} puntos`
+      ];
+    }
+    return baseBenefits;
+  };
+
+  // Generar niveles con beneficios dinámicos
+  const LEVELS = BASE_LEVELS.map(level => ({
+    ...level,
+    benefits: getLevelBenefits(level.baseBenefits)
+  }));
 
   // Determinar el nivel actual basado en los puntos
   const getCurrentLevel = (userPoints: number) => {

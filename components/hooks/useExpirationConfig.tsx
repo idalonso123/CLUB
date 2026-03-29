@@ -29,18 +29,19 @@ export const useAppConfig = (): UseAppConfigReturn => {
     const fetchConfig = async () => {
       try {
         setLoading(true);
-        const res = await fetch('/api/admin/config');
+        // Usar /api/config que es público y no requiere autenticación
+        const res = await fetch('/api/config');
         const data = await res.json();
 
-        if (data.success) {
+        if (data.success && data.config) {
           setConfig({
             // Configuración de caducidad
-            caducidad_puntos_meses: data.expiration?.caducidad_puntos_meses || 12,
-            caducidad_carnet_inactividad_meses: data.expiration?.caducidad_carnet_inactividad_meses || 6,
-            caducidad_carnet_antiguedad_meses: data.expiration?.caducidad_carnet_antiguedad_meses || 24,
+            caducidad_puntos_meses: data.config.expiration?.caducidad_puntos_meses || 12,
+            caducidad_carnet_inactividad_meses: data.config.expiration?.caducidad_carnet_inactividad_meses || 6,
+            caducidad_carnet_antiguedad_meses: data.config.expiration?.caducidad_carnet_antiguedad_meses || 24,
             // Configuración de puntos
-            eurosPorPunto: data.eurosPorPunto || 3.5,
-            puntosBienvenida: data.puntosBienvenida || 5,
+            eurosPorPunto: data.config.eurosPorPunto || 3.5,
+            puntosBienvenida: data.config.puntosBienvenida || 5,
           });
         } else {
           // Usar valores por defecto si no se puede obtener la configuración

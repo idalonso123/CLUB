@@ -14,14 +14,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Obtener el parámetro "monto" de la consulta
     const { monto } = req.query;
     
-    // Consultar el valor de euros por punto
+    // Consultar el valor de euros por punto y caducidades
     const configQuery = await executeQuery({
-      query: "SELECT clave, valor FROM config_default_puntos WHERE clave IN ('euros_por_punto', 'puntos_bienvenida')",
+      query: "SELECT clave, valor FROM config_default_puntos WHERE clave IN ('euros_por_punto', 'puntos_bienvenida', 'caducidad_puntos_meses', 'caducidad_carnet_inactividad_meses', 'caducidad_carnet_antiguedad_meses')",
       values: []
     });
 
     let eurosPorPunto = 3.50;
     let puntosBienvenida = 5;
+    let caducidad_puntos_meses = 12;
+    let caducidad_carnet_inactividad_meses = 6;
+    let caducidad_carnet_antiguedad_meses = 24;
     
     if (Array.isArray(configQuery)) {
       configQuery.forEach(item => {
@@ -29,6 +32,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           eurosPorPunto = parseFloat(item.valor);
         } else if (item.clave === 'puntos_bienvenida') {
           puntosBienvenida = parseInt(item.valor, 10);
+        } else if (item.clave === 'caducidad_puntos_meses') {
+          caducidad_puntos_meses = parseInt(item.valor, 10);
+        } else if (item.clave === 'caducidad_carnet_inactividad_meses') {
+          caducidad_carnet_inactividad_meses = parseInt(item.valor, 10);
+        } else if (item.clave === 'caducidad_carnet_antiguedad_meses') {
+          caducidad_carnet_antiguedad_meses = parseInt(item.valor, 10);
         }
       });
     }
@@ -55,7 +64,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       config: {
         eurosPorPunto,
         puntosBienvenida,
-        tellerRewards
+        tellerRewards,
+        expiration: {
+          caducidad_puntos_meses,
+          caducidad_carnet_inactividad_meses,
+          caducidad_carnet_antiguedad_meses
+        }
       }
     };
 
