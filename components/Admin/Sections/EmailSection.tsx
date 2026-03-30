@@ -1461,7 +1461,7 @@ const EmailSection: React.FC = () => {
                       <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
                         Segmento dinámico
                       </span>
-                      <div className="flex space-x-3 items-center">
+                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-start sm:items-center">
                         <button
                           onClick={() => downloadSegmentUsers(segment)}
                           className="flex items-center gap-1 text-green-600 hover:text-green-800 text-sm font-medium"
@@ -1507,9 +1507,9 @@ const EmailSection: React.FC = () => {
                 });
                 setShowAutomationModal(true);
               }}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              className="bg-blue-600 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
               Nueva Automatización

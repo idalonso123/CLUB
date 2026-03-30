@@ -60,9 +60,6 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     stampDates.push(now);
     
-    // Obtener configuración de caducidad
-    const expirationConfig = await getExpirationConfig();
-    
     // Calcular nueva fecha de caducidad por inactividad usando configuración dinámica
     const expirationDate = new Date();
     expirationDate.setMonth(expirationDate.getMonth() + expirationConfig.caducidad_carnet_inactividad_meses);

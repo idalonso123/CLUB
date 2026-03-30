@@ -421,7 +421,7 @@ const TermsAndConditionsDropdown: React.FC = () => {
       >
         <span className="flex items-center">
           <i className="fas fa-info-circle mr-2"></i>
-          {`Términos y Condiciones de Uso – Tarjeta ${getCompanyName()}`}
+          Términos y Condiciones de Uso - Club ViveVerde
         </span>
         <i className={`fas fa-chevron-${isOpen ? 'up' : 'down'} transition-transform duration-200`}></i>
       </button>
@@ -439,11 +439,11 @@ const TermsAndConditionsDropdown: React.FC = () => {
               <ul className="space-y-3">
                 <li className="flex">
                   <i className="fas fa-circle text-[0.5rem] text-green-700 mt-2 mr-2"></i>
-                  <span className="text-base">La Tarjeta de Fidelidad Viveverde es un programa gratuito que premia la confianza de nuestros clientes habituales mediante un sistema de puntos y niveles que ofrecen ventajas exclusivas. Al unirte y utilizar tu tarjeta, aceptas los siguientes términos y condiciones</span>
+                  <span className="text-base">Club Viveverde es un programa gratuito que premia la confianza de nuestros clientes habituales mediante un sistema de puntos y niveles que ofrecen ventajas exclusivas. Al unirte aceptas los siguientes términos y condiciones</span>
                 </li>
                 <li className="flex">
                   <i className="fas fa-circle text-[0.5rem] text-green-700 mt-2 mr-2"></i>
-                  <span className="text-base">{`Es imprescindible completar correctamente todos los datos personales requeridos para acceder a las ventajas del ${getCompanyName()}. La falta de cualquiera de estos datos inhabilita automáticamente la participación en el programa, así como el acceso a descuentos, promociones y beneficios asociados.`}</span>
+                  <span className="text-base">Es imprescindible completar correctamente todos los datos personales requeridos para acceder a las ventajas de Club ViveVerde. La falta de cualquiera de estos datos inhabilita automáticamente la participación en el programa, así como el acceso a descuentos, promociones y beneficios asociados.</span>
                 </li>
                 <li className="flex">
                   <i className="fas fa-circle text-[0.5rem] text-green-700 mt-2 mr-2"></i>
@@ -453,7 +453,7 @@ const TermsAndConditionsDropdown: React.FC = () => {
                     rel="noopener noreferrer"
                     className="text-base text-green-800 hover:underline"
                   >
-                    {`Leer más sobre los Términos y Condiciones de Uso – Tarjeta ${getCompanyName()}`}
+                    Leer más sobre los Términos y Condiciones de Uso - Club ViveVerde
                   </a>
                 </li>
               </ul>

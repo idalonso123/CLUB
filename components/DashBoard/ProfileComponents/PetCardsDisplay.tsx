@@ -228,7 +228,7 @@ const PetCardsDisplay: React.FC<PetCardsDisplayProps> = ({ itemVariants }) => {
         >
           <div className="flex items-center">
             <i className="fas fa-info-circle mr-2 text-green-600"></i>
-            Tarjeta de Sacos – Condiciones Específicas
+            Carnet de mascotas - Condiciones específicas
           </div>
           <motion.div
             animate={{ rotate: isInfoOpen ? 180 : 0 }}
@@ -256,7 +256,15 @@ const PetCardsDisplay: React.FC<PetCardsDisplayProps> = ({ itemVariants }) => {
               animate={{ y: isInfoOpen ? 0 : 10, opacity: isInfoOpen ? 1 : 0 }}
               transition={{ duration: 0.3, delay: 0.1 }}
             >
-              Los carnets animales son una iniciativa de Club ViveVerde para promover el cuidado y bienestar animal.
+              Los carnets de mascotas son una iniciativa de Club ViveVerde para promover el cuidado y bienestar animal.
+            </motion.p>
+            
+            <motion.p
+              initial={{ y: 10, opacity: 0 }}
+              animate={{ y: isInfoOpen ? 0 : 10, opacity: isInfoOpen ? 1 : 0 }}
+              transition={{ duration: 0.3, delay: 0.15 }}
+            >
+              Es necesario tener activa la Tarjeta de Fidelidad ViveVerde para disfrutar del carnet de mascotas.
             </motion.p>
             
             <motion.ul
@@ -265,12 +273,11 @@ const PetCardsDisplay: React.FC<PetCardsDisplayProps> = ({ itemVariants }) => {
               animate={{ y: isInfoOpen ? 0 : 10, opacity: isInfoOpen ? 1 : 0 }}
               transition={{ duration: 0.3, delay: 0.2 }}
             >
-              <li>Es necesario tener activa la Tarjeta de Fidelidad ViveVerde para disfrutar de la Tarjeta de Pienso.</li>
-              <li>Se sella la tarjeta cada vez que se compre un saco de pienso de la misma marca, sabor y peso.</li>
-              <li>Al completar el número de compras indicado (por ejemplo, 10), el siguiente saco es gratuito.</li>
+              <li>Se sella el carnet cada vez que se compre un saco de pienso de la misma marca, sabor y peso.</li>
+              <li>Al completar el número de compras indicado ({sellosRequeridos}), el siguiente saco es gratuito.</li>
               <li>Solo se permite cambiar el tipo de pienso si no hay disponibilidad, y solo por uno equivalente o inferior de la misma marca.</li>
-              <li>No se puede acumular puntos de fidelidad y sellar la Tarjeta de Pienso por la misma compra (son excluyentes).</li>
-              <li>En compras mixtas (pienso y otros productos), puedes sellar la Tarjeta de Pienso por el pienso y acumular puntos por el resto.</li>
+              <li>No se puede acumular puntos y sellar el carnet de mascotas por la misma compra (son excluyentes).</li>
+              <li>En compras mixtas (pienso y otros productos), puedes sellar el carnet de mascotas por el pienso y acumular puntos por el resto.</li>
               <li>Los sellos se aplican únicamente en el momento de la compra, presentando la tarjeta correspondiente.</li>
               <li><strong>Caducidad del carnet:</strong> El carnet de mascota caduca por dos motivos:
                 <ul className="list-disc pl-5 mt-1">
