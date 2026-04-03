@@ -135,7 +135,7 @@ const Navbar = () => {
         // La clase adicional solo añade estilos específicos del componente
         className={`navbar app-navbar ${isAdminRoute ? 'admin-navbar-mode' : ''}`}
       >
-        <div className="relative mx-auto p-4 flex items-center justify-between">
+        <div className="relative mx-auto p-2 flex items-center justify-between">
           {/* Logo */}
           <motion.div
             className="z-10 flex items-center"
