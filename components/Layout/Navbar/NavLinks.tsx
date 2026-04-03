@@ -124,81 +124,135 @@ const NavLinks: React.FC<NavLinksProps> = ({
           )}
 
           <motion.div className="mb-1">
-            <Link
-              href="/marketing"
-              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 ${getLinkClass("/marketing")}`}
+            <motion.button
+              className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
               onClick={() => {
+                // Usar window.history.pushState en lugar de router.push para mantener consistencia
+                // con el menú interno del MarketingDashboard
+                if (typeof window !== 'undefined') {
+                  const url = new URL(window.location.href);
+                  url.pathname = '/marketing';
+                  url.searchParams.delete('section');
+                  window.history.pushState({}, '', url.toString());
+                  // Disparar evento popstate para que el MarketingDashboard detecte el cambio
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }
                 if (closeMenu) closeMenu();
               }}
             >
               <i className="fas fa-tachometer-alt mr-3 w-5 text-center"></i>
               <span>Panel Principal</span>
-            </Link>
+            </motion.button>
           </motion.div>
 
           <motion.div className="mb-1">
-            <Link
-              href="/marketing?section=templates"
+            <motion.button
               className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
               onClick={() => {
+                // Usar window.history.pushState en lugar de router.push para mantener consistencia
+                // con el menú interno del MarketingDashboard
+                if (typeof window !== 'undefined') {
+                  const url = new URL(window.location.href);
+                  url.pathname = '/marketing';
+                  url.searchParams.set('section', 'templates');
+                  window.history.pushState({}, '', url.toString());
+                  // Disparar evento popstate para que el MarketingDashboard detecte el cambio
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }
                 if (closeMenu) closeMenu();
               }}
             >
               <i className="fas fa-file-alt mr-3 w-5 text-center"></i>
               <span>Plantillas</span>
-            </Link>
+            </motion.button>
           </motion.div>
 
           <motion.div className="mb-1">
-            <Link
-              href="/marketing?section=campaigns"
+            <motion.button
               className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
               onClick={() => {
+                // Usar window.history.pushState en lugar de router.push para mantener consistencia
+                // con el menú interno del MarketingDashboard
+                if (typeof window !== 'undefined') {
+                  const url = new URL(window.location.href);
+                  url.pathname = '/marketing';
+                  url.searchParams.set('section', 'campaigns');
+                  window.history.pushState({}, '', url.toString());
+                  // Disparar evento popstate para que el MarketingDashboard detecte el cambio
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }
                 if (closeMenu) closeMenu();
               }}
             >
               <i className="fas fa-envelope mr-3 w-5 text-center"></i>
               <span>Campañas</span>
-            </Link>
+            </motion.button>
           </motion.div>
 
           <motion.div className="mb-1">
-            <Link
-              href="/marketing?section=subscribers"
+            <motion.button
               className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
               onClick={() => {
+                // Usar window.history.pushState en lugar de router.push para mantener consistencia
+                // con el menú interno del MarketingDashboard
+                if (typeof window !== 'undefined') {
+                  const url = new URL(window.location.href);
+                  url.pathname = '/marketing';
+                  url.searchParams.set('section', 'subscribers');
+                  window.history.pushState({}, '', url.toString());
+                  // Disparar evento popstate para que el MarketingDashboard detecte el cambio
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }
                 if (closeMenu) closeMenu();
               }}
             >
               <i className="fas fa-users mr-3 w-5 text-center"></i>
               <span>Suscriptores</span>
-            </Link>
+            </motion.button>
           </motion.div>
 
           <motion.div className="mb-1">
-            <Link
-              href="/marketing?section=segments"
+            <motion.button
               className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
               onClick={() => {
+                // Usar window.history.pushState en lugar de router.push para mantener consistencia
+                // con el menú interno del MarketingDashboard
+                if (typeof window !== 'undefined') {
+                  const url = new URL(window.location.href);
+                  url.pathname = '/marketing';
+                  url.searchParams.set('section', 'segments');
+                  window.history.pushState({}, '', url.toString());
+                  // Disparar evento popstate para que el MarketingDashboard detecte el cambio
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }
                 if (closeMenu) closeMenu();
               }}
             >
               <i className="fas fa-layer-group mr-3 w-5 text-center"></i>
               <span>Segmentos</span>
-            </Link>
+            </motion.button>
           </motion.div>
 
           <motion.div className="mb-1">
-            <Link
-              href="/marketing?section=automations"
+            <motion.button
               className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
               onClick={() => {
+                // Usar window.history.pushState en lugar de router.push para mantener consistencia
+                // con el menú interno del MarketingDashboard
+                if (typeof window !== 'undefined') {
+                  const url = new URL(window.location.href);
+                  url.pathname = '/marketing';
+                  url.searchParams.set('section', 'automations');
+                  window.history.pushState({}, '', url.toString());
+                  // Disparar evento popstate para que el MarketingDashboard detecte el cambio
+                  window.dispatchEvent(new PopStateEvent('popstate'));
+                }
                 if (closeMenu) closeMenu();
               }}
             >
               <i className="fas fa-cogs mr-3 w-5 text-center"></i>
               <span>Automatizaciones</span>
-            </Link>
+            </motion.button>
           </motion.div>
 
           <motion.div className="mb-1 pt-2 border-t border-green-700 mt-2">
