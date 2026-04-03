@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/router';
 import toast from 'react-hot-toast';
+import Link from 'next/link';
 import WysiwygEditor, { AVAILABLE_VARIABLES } from '../Marketing/Common/WysiwygEditor';
 
 // Función para sanitizar entrada de fecha y prevenir años de más de 4 dígitos
@@ -129,8 +131,15 @@ interface MarketingDashboardProps {
   userRole?: string | null;
 }
 
-const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => {
+const MarketingDashboard = ({ userRole }: MarketingDashboardProps) => {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'templates' | 'campaigns' | 'subscribers' | 'segments' | 'automations'>('dashboard');
+  const router = useRouter();
+  
+  // Estado para controlar la visibilidad del sidebar en móviles
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Estados para datos
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
   const [subscribers, setSubscribers] = useState<EmailSubscriber[]>([]);
@@ -218,7 +227,118 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
   });
 
   const [segmentCounts, setSegmentCounts] = useState<Record<number, { count: number; loading: boolean }>>({});
+  
+  // Efecto para detectar el tamaño de la pantalla
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth >= 768) {
+        setIsMobileOpen(false);
+      }
+    };
 
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkIfMobile);
+    };
+  }, []);
+  
+  // Función para navegar a una sección
+  const handleSectionNavigate = (tab: string) => {
+    setActiveTab(tab as any);
+    if (isMobile) {
+      setIsMobileOpen(false);
+    }
+  };
+  
+  // Renderizado del botón para móviles - flecha hacia la derecha cuando cerrado
+  const renderMobileButton = () => {
+    if (!isMobile || isMobileOpen) return null;
+    
+    return (
+      <button 
+        onClick={() => setIsMobileOpen(true)}
+        className="fixed bottom-5 left-2 z-50 w-8 h-8 flex items-center justify-center bg-green-700 shadow-md rounded-md text-white focus:outline-none"
+        style={{bottom: '20px', top: 'auto'}}
+        aria-label="Abrir menú"
+      >
+        <i className="fas fa-arrow-right text-sm"></i>
+      </button>
+    );
+  };
+  
+  // Overlay para cuando el sidebar esté abierto en móvil
+  const renderOverlay = () => {
+    if (!isMobile || !isMobileOpen) return null;
+    
+    return (
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 z-30"
+        onClick={() => setIsMobileOpen(false)}
+      />
+    );
+  };
+  
+  // Renderizado del sidebar de Marketing
+  const renderSidebar = () => (
+    <div className={`bg-green-900 text-white shadow-lg h-screen z-40 overflow-y-auto
+      ${isMobile ? 'fixed top-0 left-0 w-64' : 'w-64 sticky top-0'}`}>
+      {/* Título del panel */}
+      <div className="p-4 text-center border-b border-green-700">
+        <h1 className="text-xl font-bold">Panel de Marketing</h1>
+        <div className="text-gray-400 text-sm mt-1 transition-colors duration-200 hover:text-white">
+          Garcenar Jardineria SL
+        </div>
+      </div>
+      
+      {/* Menú de navegación */}
+      <nav className="mt-2">
+        <ul>
+          {[
+            { id: 'dashboard', name: 'Panel Principal', icon: 'fa-tachometer-alt' },
+            { id: 'templates', name: 'Plantillas', icon: 'fa-file-alt' },
+            { id: 'campaigns', name: 'Campañas', icon: 'fa-envelope' },
+            { id: 'subscribers', name: 'Suscriptores', icon: 'fa-users' },
+            { id: 'segments', name: 'Segmentos', icon: 'fa-layer-group' },
+            { id: 'automations', name: 'Automatizaciones', icon: 'fa-robot' }
+          ].map((section) => (
+            <li key={section.id} className="mb-1">
+              <button
+                onClick={() => handleSectionNavigate(section.id)}
+                className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200
+                  ${activeTab === section.id 
+                    ? 'bg-green-700 border-l-4 border-white font-medium' 
+                    : 'hover:bg-green-800'
+                  }`}
+              >
+                <i className={`fas ${section.icon} mr-3 w-5 text-center`}></i>
+                <span>{section.name}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      
+      {/* Footer con información del usuario */}
+      <div className="absolute bottom-0 w-full p-4 border-t border-green-700">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-full bg-green-700 flex items-center justify-center">
+            <i className="fas fa-user"></i>
+          </div>
+          <div>
+            <p className="font-medium">
+              {userRole === 'marketing' ? 'Marketing' : 'Administrador'}
+            </p>
+            <Link href="/dashboard" className="text-sm text-green-300 hover:text-white">
+              Mi perfil
+            </Link>
+          </div>
+        </div>
+      </div>
+  );
+  
   const previewSegment = async () => {
     setSegmentPreview(prev => ({ ...prev, loading: true }));
     try {
@@ -780,54 +900,32 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-green-800 text-white py-6 px-4 shadow-md">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">Panel de Marketing</h1>
-              <p className="text-green-200 mt-1">Gestiona campañas de email, plantillas y automatizaciones</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-green-200">
-                Usuario: {userRole === 'marketing' ? 'Marketing' : 'Administrador'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex space-x-1 overflow-x-auto py-2">
-            {[
-              { id: 'dashboard', label: 'Panel Principal' },
-              { id: 'templates', label: 'Plantillas' },
-              { id: 'campaigns', label: 'Campañas' },
-              { id: 'subscribers', label: 'Suscriptores' },
-              { id: 'segments', label: 'Segmentos' },
-              { id: 'automations', label: 'Automatizaciones' }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'bg-green-700 text-white'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
+    <>
+      {renderMobileButton()}
+      {renderOverlay()}
+      
+      <div className="flex h-screen bg-gray-100">
+        {/* Sidebar */}
+        <AnimatePresence>
+          {(!isMobile || isMobileOpen) && (
+            <motion.div
+              initial={{ x: -300, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -300, opacity: 0 }}
+              transition={{ duration: 0.3, type: 'spring', stiffness: 100 }}
+            >
+              {renderSidebar()}
+            </motion.div>
+          )}
+        </AnimatePresence>
+        
+        {/* Contenido principal */}
+        <motion.div
+          className="flex-1 overflow-auto p-4 md:p-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1808,7 +1906,9 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+        </motion.div>
+      </div>
+    </>
   );
 };
 
