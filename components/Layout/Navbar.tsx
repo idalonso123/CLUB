@@ -176,6 +176,24 @@ const Navbar = () => {
           <div className="hidden md:flex space-x-2 lg:space-x-4 items-center">
             <Link href="/soporte">
               <motion.button
+                onClick={() => {
+                  // Guardar la página correcta según el tipo de usuario
+                  if (typeof window !== 'undefined') {
+                    if (isAdminOnly) {
+                      // Si es administrador, guardar Panel de Control
+                      sessionStorage.setItem('soportePreviousPage', '/admin/dashboard');
+                    } else if (isAdmin && !isAdminOnly) {
+                      // Si es cajero, guardar Panel de Cajero
+                      sessionStorage.setItem('soportePreviousPage', '/teller');
+                    } else if (isMarketing) {
+                      // Si es marketing, guardar Panel de Marketing
+                      sessionStorage.setItem('soportePreviousPage', '/marketing');
+                    } else {
+                      // Para usuarios normales, guardar Puntos de Fidelidad
+                      sessionStorage.setItem('soportePreviousPage', '/puntos-fidelidad');
+                    }
+                  }
+                }}
                 className="bg-green-800 px-4 py-2 rounded-full text-white font-bold flex justify-center items-center hover:bg-green-700 transition duration-300 ease-in-out text-sm"
               >
                 <i className="fa-solid fa-envelope"></i>

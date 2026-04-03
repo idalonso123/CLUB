@@ -66,104 +66,23 @@ const NavLinks: React.FC<NavLinksProps> = ({
   };
 
   if (isMobile) {
-    // Si está en la página de marketing Y (es usuario de marketing O es admin que accedió desde su menú), mostrar submenú de marketing
-    if ((isOnMarketingPage && isMarketing) || (isOnMarketingPage && isAdminOnly)) {
+    // Si estamos en la página de soporte, mostrar menú simplificado con opción de volver
+    const isOnSupportPage = router.pathname.startsWith("/soporte");
+    if (isOnSupportPage) {
       return (
         <>
-          {/* Botón Volver a Administrador (solo cuando el admin accedió a marketing desde su menú) */}
-          {isAdminOnly && isOnMarketingPage && (
-            <motion.div className="mb-1">
-              <motion.button
-                onClick={() => handleLinkClick("/admin/dashboard")}
-                className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800`}
-              >
-                <i className="fas fa-arrow-left mr-3 w-5 text-center"></i>
-                <span>Volver a Administrador</span>
-              </motion.button>
-            </motion.div>
-          )}
-
-          <motion.div className="mb-1">
-            <motion.button
-              onClick={() => handleMarketingSectionClick("dashboard")}
-              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 ${getLinkClass("/marketing")}`}
-            >
-              <i className="fas fa-tachometer-alt mr-3 w-5 text-center"></i>
-              <span>Panel Principal</span>
-            </motion.button>
-          </motion.div>
-
-          <motion.div className="mb-1">
-            <motion.button
-              onClick={() => handleMarketingSectionClick("templates")}
-              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800`}
-            >
-              <i className="fas fa-file-alt mr-3 w-5 text-center"></i>
-              <span>Plantillas</span>
-            </motion.button>
-          </motion.div>
-
-          <motion.div className="mb-1">
-            <motion.button
-              onClick={() => handleMarketingSectionClick("campaigns")}
-              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800`}
-            >
-              <i className="fas fa-envelope mr-3 w-5 text-center"></i>
-              <span>Campañas</span>
-            </motion.button>
-          </motion.div>
-
-          <motion.div className="mb-1">
-            <motion.button
-              onClick={() => handleMarketingSectionClick("subscribers")}
-              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800`}
-            >
-              <i className="fas fa-users mr-3 w-5 text-center"></i>
-              <span>Suscriptores</span>
-            </motion.button>
-          </motion.div>
-
-          <motion.div className="mb-1">
-            <motion.button
-              onClick={() => handleMarketingSectionClick("segments")}
-              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800`}
-            >
-              <i className="fas fa-layer-group mr-3 w-5 text-center"></i>
-              <span>Segmentos</span>
-            </motion.button>
-          </motion.div>
-
-          <motion.div className="mb-1">
-            <motion.button
-              onClick={() => handleMarketingSectionClick("automations")}
-              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800`}
-            >
-              <i className="fas fa-cogs mr-3 w-5 text-center"></i>
-              <span>Automatizaciones</span>
-            </motion.button>
-          </motion.div>
-
-          <motion.div className="mb-1 pt-2 border-t border-green-700 mt-2">
-            <motion.button
-              onClick={() => handleLinkClick("/soporte")}
-              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800`}
-            >
-              <i className="fas fa-life-ring mr-3 w-5 text-center"></i>
-              <span>Soporte</span>
-            </motion.button>
-          </motion.div>
-
+          {/* Opción Mi Perfil en soporte */}
           <motion.div className="mb-1">
             <motion.button
               onClick={() => handleLinkClick("/dashboard")}
-              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800`}
+              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 ${getLinkClass("/dashboard")}`}
             >
               <i className="fas fa-user mr-3 w-5 text-center"></i>
               <span>Mi perfil</span>
             </motion.button>
           </motion.div>
 
-          {/* Cerrar sesión movido después de Mi perfil */}
+          {/* Cerrar sesión en soporte */}
           <motion.div className="mb-1">
             <motion.button
               onClick={() => {
@@ -174,7 +93,160 @@ const NavLinks: React.FC<NavLinksProps> = ({
                   closeMenu();
                 }
               }}
-              className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800 text-red-300 hover:text-red-200"
+              className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800 text-white hover:text-gray-200"
+            >
+              <i className="fas fa-sign-out-alt mr-3 w-5 text-center"></i>
+              <span>Cerrar sesión</span>
+            </motion.button>
+          </motion.div>
+        </>
+      );
+    }
+
+    // Si está en la página de marketing Y (es usuario de marketing O es admin que accedió desde su menú), mostrar submenú de marketing
+    if ((isOnMarketingPage && isMarketing) || (isOnMarketingPage && isAdminOnly)) {
+      return (
+        <>
+          {/* Botón Volver a Administrador (solo cuando el admin accedió a marketing desde su menú) */}
+          {isAdminOnly && isOnMarketingPage && (
+            <motion.div className="mb-1">
+              <Link
+                href="/admin/dashboard"
+                className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800`}
+                onClick={() => {
+                  if (closeMenu) closeMenu();
+                }}
+              >
+                <i className="fas fa-arrow-left mr-3 w-5 text-center"></i>
+                <span>Volver a Administrador</span>
+              </Link>
+            </motion.div>
+          )}
+
+          <motion.div className="mb-1">
+            <Link
+              href="/marketing"
+              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 ${getLinkClass("/marketing")}`}
+              onClick={() => {
+                if (closeMenu) closeMenu();
+              }}
+            >
+              <i className="fas fa-tachometer-alt mr-3 w-5 text-center"></i>
+              <span>Panel Principal</span>
+            </Link>
+          </motion.div>
+
+          <motion.div className="mb-1">
+            <Link
+              href="/marketing?section=templates"
+              className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
+              onClick={() => {
+                if (closeMenu) closeMenu();
+              }}
+            >
+              <i className="fas fa-file-alt mr-3 w-5 text-center"></i>
+              <span>Plantillas</span>
+            </Link>
+          </motion.div>
+
+          <motion.div className="mb-1">
+            <Link
+              href="/marketing?section=campaigns"
+              className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
+              onClick={() => {
+                if (closeMenu) closeMenu();
+              }}
+            >
+              <i className="fas fa-envelope mr-3 w-5 text-center"></i>
+              <span>Campañas</span>
+            </Link>
+          </motion.div>
+
+          <motion.div className="mb-1">
+            <Link
+              href="/marketing?section=subscribers"
+              className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
+              onClick={() => {
+                if (closeMenu) closeMenu();
+              }}
+            >
+              <i className="fas fa-users mr-3 w-5 text-center"></i>
+              <span>Suscriptores</span>
+            </Link>
+          </motion.div>
+
+          <motion.div className="mb-1">
+            <Link
+              href="/marketing?section=segments"
+              className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
+              onClick={() => {
+                if (closeMenu) closeMenu();
+              }}
+            >
+              <i className="fas fa-layer-group mr-3 w-5 text-center"></i>
+              <span>Segmentos</span>
+            </Link>
+          </motion.div>
+
+          <motion.div className="mb-1">
+            <Link
+              href="/marketing?section=automations"
+              className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
+              onClick={() => {
+                if (closeMenu) closeMenu();
+              }}
+            >
+              <i className="fas fa-cogs mr-3 w-5 text-center"></i>
+              <span>Automatizaciones</span>
+            </Link>
+          </motion.div>
+
+          <motion.div className="mb-1 pt-2 border-t border-green-700 mt-2">
+            <Link
+              href="/soporte"
+              className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
+              onClick={() => {
+                // Guardar la página correcta según el tipo de usuario
+                if (typeof window !== 'undefined') {
+                  if (isAdminOnly) {
+                    sessionStorage.setItem('soportePreviousPage', '/admin/dashboard');
+                  } else if (isMarketing) {
+                    sessionStorage.setItem('soportePreviousPage', '/marketing');
+                  }
+                }
+                if (closeMenu) closeMenu();
+              }}
+            >
+              <i className="fas fa-life-ring mr-3 w-5 text-center"></i>
+              <span>Soporte</span>
+            </Link>
+          </motion.div>
+
+          <motion.div className="mb-1">
+            <Link
+              href="/dashboard"
+              className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
+              onClick={() => {
+                if (closeMenu) closeMenu();
+              }}
+            >
+              <i className="fas fa-user mr-3 w-5 text-center"></i>
+              <span>Mi perfil</span>
+            </Link>
+          </motion.div>
+
+          {/* Cerrar sesión movido después de Mi perfil - Color blanco como el resto */}
+          <motion.div className="mb-1">
+            <motion.button
+              onClick={() => {
+                if (handleLogout) {
+                  handleLogout();
+                }
+                if (closeMenu) {
+                  closeMenu();
+                }
+              }}
+              className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800 text-white hover:text-gray-200"
             >
               <i className="fas fa-sign-out-alt mr-3 w-5 text-center"></i>
               <span>Cerrar sesión</span>
@@ -401,6 +473,22 @@ const NavLinks: React.FC<NavLinksProps> = ({
         >
           <motion.button
             onClick={() => {
+              // Guardar la página correcta según el tipo de usuario
+              if (typeof window !== 'undefined') {
+                if (isAdminOnly) {
+                  // Si es administrador, guardar Panel de Control
+                  sessionStorage.setItem('soportePreviousPage', '/admin/dashboard');
+                } else if (isAdmin && !isAdminOnly) {
+                  // Si es cajero, guardar Panel de Cajero
+                  sessionStorage.setItem('soportePreviousPage', '/teller');
+                } else if (isMarketing) {
+                  // Si es marketing, guardar Panel de Marketing
+                  sessionStorage.setItem('soportePreviousPage', '/marketing');
+                } else {
+                  // Para usuarios normales, guardar Puntos de Fidelidad
+                  sessionStorage.setItem('soportePreviousPage', '/puntos-fidelidad');
+                }
+              }
               if (closeMenu) closeMenu();
               handleLinkClick("/soporte");
             }}

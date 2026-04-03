@@ -32,7 +32,18 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   // Detectar si estamos en la página de marketing
   const isOnMarketingPage = router.pathname.startsWith("/marketing");
 
-  // Detectar si el admin accedió a marketing desde su menú
+  // Detectar si estamos en la página de soporte
+  const isOnSupportPage = router.pathname.startsWith("/soporte");
+
+  // Obtener la página anterior guardada cuando venimos de soporte
+  const getPreviousPage = () => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('soportePreviousPage') || '/';
+    }
+    return '/';
+  };
+
+  // Determinar si el admin accedió a marketing desde su menú
   // Esto sucede cuando isAdminOnly es true Y estamos en la página de marketing
   const isAdminInMarketing = isAdminOnly && isOnMarketingPage;
 
@@ -78,12 +89,18 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     if (isInAdminMenu) {
       return 'Panel Administrativo';
     }
+    if (isOnSupportPage) {
+      return 'Centro de Ayuda';
+    }
     return isLoggedIn ? 'Menú de Usuario' : 'Menú Principal';
   };
 
   // Determinar si mostrar el botón "Volver al Menú"
-  // Solo mostrar si estamos en el submenú de admin O si estamos en marketing pero NO es un usuario de marketing
-  const showBackButton = (isInAdminMenu) || (isInMarketingMenu && !isMarketing);
+  // Solo mostrar si estamos en el submenú de admin Y NO estamos en marketing
+  const showBackButton = isInAdminMenu && !isOnMarketingPage;
+
+  // Determinar si mostrar el botón "Volver" para soporte
+  const showSupportBackButton = isOnSupportPage;
 
   return (
     <AnimatePresence>
@@ -105,7 +122,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
             </div>
           </div>
           
-          {/* Botón para volver al menú principal (solo en modo admin o cuando admin accedió a marketing) */}
+          {/* Botón para volver al menú principal (solo en modo admin y NO en marketing) */}
           {showBackButton && (
             <div className="p-2 border-b border-green-700">
               <motion.button
@@ -121,6 +138,23 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
               >
                 <i className="fas fa-arrow-left mr-3 w-5 text-center"></i>
                 <span>Volver al Menú</span>
+              </motion.button>
+            </div>
+          )}
+
+          {/* Botón para volver a la página anterior (solo cuando estamos en soporte) */}
+          {showSupportBackButton && (
+            <div className="p-2 border-b border-green-700">
+              <motion.button
+                onClick={() => {
+                  const previousPage = getPreviousPage();
+                  router.push(previousPage);
+                  onClose();
+                }}
+                className="w-full text-left py-2 px-4 flex items-center hover:bg-green-800 transition-colors duration-200"
+              >
+                <i className="fas fa-arrow-left mr-3 w-5 text-center"></i>
+                <span>Volver</span>
               </motion.button>
             </div>
           )}
@@ -147,8 +181,8 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
             </ul>
           </nav>
           
-          {/* Botones de autenticación (solo si no está en modo admin o marketing) */}
-          {!isInAdminMenu && !isInMarketingMenu && (
+          {/* Botones de autenticación (solo si no está en modo admin, marketing o soporte) */}
+          {!isInAdminMenu && !isInMarketingMenu && !isOnSupportPage && (
             <div className="p-4">
               <AuthButtons 
                 isLoggedIn={isLoggedIn} 
