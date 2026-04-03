@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import NavLinks from "./NavLinks";
 import AuthButtons from "./AuthButtons";
+import { useRouter } from "next/router";
 
 interface MobileMenuProps {
   isMenuOpen: boolean;
@@ -24,7 +25,35 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   handleLogout,
   onClose
 }) => {
+  const router = useRouter();
   const [isInAdminMenu, setIsInAdminMenu] = useState(false);
+  const [isInMarketingMenu, setIsInMarketingMenu] = useState(false);
+
+  // Detectar si estamos en la página de marketing
+  const isOnMarketingPage = router.pathname.startsWith("/marketing");
+
+  // Detectar si el admin accedió a marketing desde su menú
+  // Esto sucede cuando isAdminOnly es true Y estamos en la página de marketing
+  const isAdminInMarketing = isAdminOnly && isOnMarketingPage;
+
+  // Cuando se abre el menú y estamos en la página de marketing, mostrar submenú de marketing
+  useEffect(() => {
+    if (isMenuOpen && isOnMarketingPage) {
+      // Siempre mostrar el menú de marketing cuando estamos en la página de marketing
+      setIsInMarketingMenu(true);
+    }
+  }, [isMenuOpen, isOnMarketingPage]);
+
+  // Resetear los submenús cuando se cierra el menú
+  useEffect(() => {
+    if (!isMenuOpen) {
+      // Solo resetear si no estamos en la página de marketing
+      if (!isOnMarketingPage) {
+        setIsInAdminMenu(false);
+        setIsInMarketingMenu(false);
+      }
+    }
+  }, [isMenuOpen, isOnMarketingPage]);
 
   // Animación para el sidebar (exactamente igual que Sidebar.tsx del admin)
   // El menú se desliza desde el lado izquierdo de la pantalla hacia la derecha
@@ -41,6 +70,21 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     }
   };
 
+  // Determinar el título del menú según el submenú activo
+  const getMenuTitle = () => {
+    if (isInMarketingMenu) {
+      return 'Panel de Marketing';
+    }
+    if (isInAdminMenu) {
+      return 'Panel Administrativo';
+    }
+    return isLoggedIn ? 'Menú de Usuario' : 'Menú Principal';
+  };
+
+  // Determinar si mostrar el botón "Volver al Menú"
+  // Solo mostrar si estamos en el submenú de admin O si estamos en marketing pero NO es un usuario de marketing
+  const showBackButton = (isInAdminMenu) || (isInMarketingMenu && !isMarketing);
+
   return (
     <AnimatePresence>
       {/* Sidebar móvil (exactamente igual que Sidebar.tsx del admin) */}
@@ -55,17 +99,24 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
         >
           {/* Título del menú */}
           <div className="p-4 text-center border-b border-green-700">
-            <h1 className="text-xl font-bold">Club ViveVerde</h1>
+            <h1 className="text-xl font-bold">{getMenuTitle()}</h1>
             <div className="text-gray-400 text-sm mt-1">
-              {isInAdminMenu ? 'Panel Administrativo' : (isLoggedIn ? 'Menú de Usuario' : 'Menú Principal')}
+              Club ViveVerde
             </div>
           </div>
           
-          {/* Botón para volver al menú principal (solo en modo admin) */}
-          {isInAdminMenu && (
+          {/* Botón para volver al menú principal (solo en modo admin o cuando admin accedió a marketing) */}
+          {showBackButton && (
             <div className="p-2 border-b border-green-700">
               <motion.button
-                onClick={() => setIsInAdminMenu(false)}
+                onClick={() => {
+                  if (isInAdminMenu) {
+                    setIsInAdminMenu(false);
+                  }
+                  if (isInMarketingMenu) {
+                    setIsInMarketingMenu(false);
+                  }
+                }}
                 className="w-full text-left py-2 px-4 flex items-center hover:bg-green-800 transition-colors duration-200"
               >
                 <i className="fas fa-arrow-left mr-3 w-5 text-center"></i>
@@ -88,13 +139,16 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                   closeMenu={onClose}
                   isInAdminMenu={isInAdminMenu}
                   setIsInAdminMenu={setIsInAdminMenu}
+                  isInMarketingMenu={isInMarketingMenu}
+                  setIsInMarketingMenu={setIsInMarketingMenu}
+                  handleLogout={handleLogout}
                 />
               </li>
             </ul>
           </nav>
           
-          {/* Botones de autenticación (solo si no está en modo admin) */}
-          {!isInAdminMenu && (
+          {/* Botones de autenticación (solo si no está en modo admin o marketing) */}
+          {!isInAdminMenu && !isInMarketingMenu && (
             <div className="p-4">
               <AuthButtons 
                 isLoggedIn={isLoggedIn} 

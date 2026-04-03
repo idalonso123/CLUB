@@ -12,10 +12,31 @@ interface NavLinksProps {
   closeMenu?: () => void;
   isInAdminMenu?: boolean;
   setIsInAdminMenu?: (value: boolean) => void;
+  isInMarketingMenu?: boolean;
+  setIsInMarketingMenu?: (value: boolean) => void;
+  handleLogout?: () => Promise<void>;
 }
 
-const NavLinks: React.FC<NavLinksProps> = ({ isAdmin, isAdminOnly, isMarketing = false, isMobile = false, isLoggedIn = false, closeMenu, isInAdminMenu = false, setIsInAdminMenu }) => {
+const NavLinks: React.FC<NavLinksProps> = ({ 
+  isAdmin, 
+  isAdminOnly, 
+  isMarketing = false, 
+  isMobile = false, 
+  isLoggedIn = false, 
+  closeMenu, 
+  isInAdminMenu = false, 
+  setIsInAdminMenu,
+  isInMarketingMenu = false,
+  setIsInMarketingMenu,
+  handleLogout
+}) => {
   const router = useRouter();
+  
+  // Detectar si estamos en la página de marketing
+  const isOnMarketingPage = router.pathname.startsWith("/marketing");
+  
+  // Detectar si el admin accedió a marketing desde su menú
+  const isAdminInMarketing = isAdminOnly && isOnMarketingPage;
   
   // Función helper para cerrar el menú y navegar
   const handleLinkClick = (href: string) => {
@@ -23,6 +44,18 @@ const NavLinks: React.FC<NavLinksProps> = ({ isAdmin, isAdminOnly, isMarketing =
       closeMenu();
     }
     router.push(href);
+  };
+
+  // Función para navegar a una sección de marketing usando query params
+  const handleMarketingSectionClick = (section: string) => {
+    if (closeMenu) {
+      closeMenu();
+    }
+    if (section === 'dashboard') {
+      router.push('/marketing');
+    } else {
+      router.push(`/marketing?section=${section}`);
+    }
   };
   
   const getLinkClass = (path: string) => {
@@ -33,6 +66,124 @@ const NavLinks: React.FC<NavLinksProps> = ({ isAdmin, isAdminOnly, isMarketing =
   };
 
   if (isMobile) {
+    // Si está en la página de marketing Y (es usuario de marketing O es admin que accedió desde su menú), mostrar submenú de marketing
+    if ((isOnMarketingPage && isMarketing) || (isOnMarketingPage && isAdminOnly)) {
+      return (
+        <>
+          {/* Botón Volver a Administrador (solo cuando el admin accedió a marketing desde su menú) */}
+          {isAdminOnly && isOnMarketingPage && (
+            <motion.div className="mb-1">
+              <motion.button
+                onClick={() => handleLinkClick("/admin/dashboard")}
+                className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800`}
+              >
+                <i className="fas fa-arrow-left mr-3 w-5 text-center"></i>
+                <span>Volver a Administrador</span>
+              </motion.button>
+            </motion.div>
+          )}
+
+          <motion.div className="mb-1">
+            <motion.button
+              onClick={() => handleMarketingSectionClick("dashboard")}
+              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 ${getLinkClass("/marketing")}`}
+            >
+              <i className="fas fa-tachometer-alt mr-3 w-5 text-center"></i>
+              <span>Panel Principal</span>
+            </motion.button>
+          </motion.div>
+
+          <motion.div className="mb-1">
+            <motion.button
+              onClick={() => handleMarketingSectionClick("templates")}
+              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800`}
+            >
+              <i className="fas fa-file-alt mr-3 w-5 text-center"></i>
+              <span>Plantillas</span>
+            </motion.button>
+          </motion.div>
+
+          <motion.div className="mb-1">
+            <motion.button
+              onClick={() => handleMarketingSectionClick("campaigns")}
+              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800`}
+            >
+              <i className="fas fa-envelope mr-3 w-5 text-center"></i>
+              <span>Campañas</span>
+            </motion.button>
+          </motion.div>
+
+          <motion.div className="mb-1">
+            <motion.button
+              onClick={() => handleMarketingSectionClick("subscribers")}
+              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800`}
+            >
+              <i className="fas fa-users mr-3 w-5 text-center"></i>
+              <span>Suscriptores</span>
+            </motion.button>
+          </motion.div>
+
+          <motion.div className="mb-1">
+            <motion.button
+              onClick={() => handleMarketingSectionClick("segments")}
+              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800`}
+            >
+              <i className="fas fa-layer-group mr-3 w-5 text-center"></i>
+              <span>Segmentos</span>
+            </motion.button>
+          </motion.div>
+
+          <motion.div className="mb-1">
+            <motion.button
+              onClick={() => handleMarketingSectionClick("automations")}
+              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800`}
+            >
+              <i className="fas fa-cogs mr-3 w-5 text-center"></i>
+              <span>Automatizaciones</span>
+            </motion.button>
+          </motion.div>
+
+          <motion.div className="mb-1 pt-2 border-t border-green-700 mt-2">
+            <motion.button
+              onClick={() => handleLinkClick("/soporte")}
+              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800`}
+            >
+              <i className="fas fa-life-ring mr-3 w-5 text-center"></i>
+              <span>Soporte</span>
+            </motion.button>
+          </motion.div>
+
+          <motion.div className="mb-1">
+            <motion.button
+              onClick={() => handleLinkClick("/dashboard")}
+              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800`}
+            >
+              <i className="fas fa-user mr-3 w-5 text-center"></i>
+              <span>Mi perfil</span>
+            </motion.button>
+          </motion.div>
+
+          {/* Cerrar sesión movido después de Mi perfil */}
+          <motion.div className="mb-1">
+            <motion.button
+              onClick={() => {
+                if (handleLogout) {
+                  handleLogout();
+                }
+                if (closeMenu) {
+                  closeMenu();
+                }
+              }}
+              className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800 text-red-300 hover:text-red-200"
+            >
+              <i className="fas fa-sign-out-alt mr-3 w-5 text-center"></i>
+              <span>Cerrar sesión</span>
+            </motion.button>
+          </motion.div>
+        </>
+      );
+    }
+
     // Si está en el submenú administrativo, mostrar las opciones del panel administrativo
     if (isInAdminMenu) {
       return (
@@ -197,44 +348,49 @@ const NavLinks: React.FC<NavLinksProps> = ({ isAdmin, isAdminOnly, isMarketing =
           </motion.div>
         )}
 
-        {isAdminOnly && (
+      {isAdminOnly && (
+        <motion.div className="mb-1">
+          <motion.button
+            onClick={() => handleLinkClick("/marketing")}
+            className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 ${getLinkClass("/marketing")}`}
+          >
+            <i className="fas fa-bullhorn mr-3 w-5 text-center"></i>
+            <span>Marketing</span>
+          </motion.button>
+        </motion.div>
+      )}
+
+      {isAdminOnly && (
+        <motion.div className="mb-1">
+          <motion.button
+            onClick={() => {
+              // No cerrar el menú, cambiar al submenú administrativo
+              if (setIsInAdminMenu) {
+                setIsInAdminMenu(true);
+              }
+            }}
+            className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 ${getLinkClass("/admin")}`}
+          >
+            <i className="fas fa-cog mr-3 w-5 text-center"></i>
+            <span>Panel Administrativo</span>
+          </motion.button>
+        </motion.div>
+      )}
+
+        {/* Menú para usuarios de marketing (móvil) - ENTRADA AL SUBMENÚ DE MARKETING */}
+        {isMarketing && !isOnMarketingPage && (
           <motion.div className="mb-1">
             <motion.button
-              onClick={() => handleLinkClick("/marketing")}
+              onClick={() => {
+                // No cerrar el menú, cambiar al submenú de marketing
+                if (setIsInMarketingMenu) {
+                  setIsInMarketingMenu(true);
+                }
+              }}
               className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 ${getLinkClass("/marketing")}`}
             >
               <i className="fas fa-bullhorn mr-3 w-5 text-center"></i>
               <span>Marketing</span>
-            </motion.button>
-          </motion.div>
-        )}
-
-        {isAdminOnly && (
-          <motion.div className="mb-1">
-            <motion.button
-              onClick={() => {
-                // No cerrar el menú, cambiar al submenú administrativo
-                if (setIsInAdminMenu) {
-                  setIsInAdminMenu(true);
-                }
-              }}
-              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 ${getLinkClass("/admin")}`}
-            >
-              <i className="fas fa-cog mr-3 w-5 text-center"></i>
-              <span>Panel Administrativo</span>
-            </motion.button>
-          </motion.div>
-        )}
-
-        {/* Menú para usuarios de marketing (móvil) */}
-        {isMarketing && (
-          <motion.div className="mb-1">
-            <motion.button
-              onClick={() => handleLinkClick("/marketing")}
-              className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 ${getLinkClass("/marketing")}`}
-            >
-              <i className="fas fa-envelope mr-3 w-5 text-center"></i>
-              <span>Sistema de Correos</span>
             </motion.button>
           </motion.div>
         )}

@@ -3,7 +3,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import WysiwygEditor, { AVAILABLE_VARIABLES } from '../Marketing/Common/WysiwygEditor';
+
+// Tipo para las secciones del menú
+type MenuSection = 'dashboard' | 'templates' | 'campaigns' | 'subscribers' | 'segments' | 'automations';
 
 // Función para sanitizar entrada de fecha y prevenir años de más de 4 dígitos
 const sanitizeDateInput = (value: string): string => {
@@ -129,8 +134,27 @@ interface MarketingDashboardProps {
   userRole?: string | null;
 }
 
+// Tipo para las secciones del menú
+
 const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'templates' | 'campaigns' | 'subscribers' | 'segments' | 'automations'>('dashboard');
+  const router = useRouter();
+  // Leer la sección inicial de la URL
+const getInitialSection = (): MenuSection => {
+  if (typeof window !== 'undefined') {
+    const params = new URLSearchParams(window.location.search);
+    const section = params.get('section');
+    if (section && ['dashboard', 'templates', 'campaigns', 'subscribers', 'segments', 'automations'].includes(section)) {
+      return section as MenuSection;
+    }
+  }
+  return 'dashboard';
+};
+
+const [activeMenuItem, setActiveMenuItem] = useState<MenuSection>(getInitialSection);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Estados para los datos
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
   const [subscribers, setSubscribers] = useState<EmailSubscriber[]>([]);
@@ -138,6 +162,7 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
   const [automations, setAutomations] = useState<EmailAutomation[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Estados para los modales
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [showCampaignModal, setShowCampaignModal] = useState(false);
   const [showSegmentModal, setShowSegmentModal] = useState(false);
@@ -147,6 +172,7 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
   const [editingSegment, setEditingSegment] = useState<EmailSegment | null>(null);
   const [editingAutomation, setEditingAutomation] = useState<EmailAutomation | null>(null);
 
+  // Estados para los formularios
   const [templateForm, setTemplateForm] = useState({
     name: '',
     subject: '',
@@ -219,6 +245,73 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
 
   const [segmentCounts, setSegmentCounts] = useState<Record<number, { count: number; loading: boolean }>>({});
 
+  // Detectar si es móvil
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth >= 768) {
+        setIsMobileOpen(false);
+      }
+    };
+
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkIfMobile);
+    };
+  }, []);
+
+  // Escuchar cambios en la URL para actualizar el menú
+  useEffect(() => {
+    const handleRouteChange = () => {
+      const params = new URLSearchParams(window.location.search);
+      const section = params.get('section');
+      if (section && ['dashboard', 'templates', 'campaigns', 'subscribers', 'segments', 'automations'].includes(section)) {
+        setActiveMenuItem(section as MenuSection);
+      } else {
+        setActiveMenuItem('dashboard');
+      }
+    };
+
+    // Escuchar eventos de popstate (cuando se usa el botón atrás del navegador)
+    window.addEventListener('popstate', handleRouteChange);
+    
+    // Verificar la URL actual al cargar
+    handleRouteChange();
+
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange);
+    };
+  }, []);
+
+  // Función para cambiar de sección y actualizar la URL
+  const handleMenuItemClick = (itemId: MenuSection) => {
+    setActiveMenuItem(itemId);
+    if (isMobile) {
+      setIsMobileOpen(false);
+    }
+    // Actualizar la URL sin recargar la página
+    const url = new URL(window.location.href);
+    if (itemId === 'dashboard') {
+      url.searchParams.delete('section');
+    } else {
+      url.searchParams.set('section', itemId);
+    }
+    window.history.pushState({}, '', url.toString());
+  };
+
+  // Definición del menú lateral
+  const menuItems = [
+    { id: 'dashboard' as MenuSection, name: 'Panel Principal', icon: 'fa-tachometer-alt' },
+    { id: 'templates' as MenuSection, name: 'Plantillas', icon: 'fa-file-alt' },
+    { id: 'campaigns' as MenuSection, name: 'Campañas', icon: 'fa-envelope' },
+    { id: 'subscribers' as MenuSection, name: 'Suscriptores', icon: 'fa-users' },
+    { id: 'segments' as MenuSection, name: 'Segmentos', icon: 'fa-layer-group' },
+    { id: 'automations' as MenuSection, name: 'Automatizaciones', icon: 'fa-cogs' },
+  ];
+
+  // Funciones de utilidad
   const previewSegment = async () => {
     setSegmentPreview(prev => ({ ...prev, loading: true }));
     try {
@@ -343,6 +436,7 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
     fetchData();
   }, [fetchData]);
 
+  // Manejadores de acciones CRUD
   const handleSaveTemplate = async () => {
     try {
       const url = editingTemplate
@@ -691,6 +785,7 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
     setShowSegmentModal(true);
   };
 
+  // Funciones de utilidad para estados
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'draft': return 'bg-gray-100 text-gray-800';
@@ -758,6 +853,7 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
     }
   };
 
+  // Opciones para filtros
   const housingOptions = [
     'terraza', 'balcón', 'huerto', 'césped', 'jardín', 'estanque', 'marquesina', 'piscina'
   ];
@@ -766,6 +862,7 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
     'sin animales', 'perro(s)', 'gato(s)', 'pájaro(s)', 'pez (peces)', 'roedor(es)', 'otros', 'animales de corral'
   ];
 
+  // Estadísticas
   const stats = {
     totalTemplates: templates.length,
     activeTemplates: templates.filter(t => t.is_active).length,
@@ -779,161 +876,102 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
     activeAutomations: automations.filter(a => a.is_active).length
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-green-800 text-white py-6 px-4 shadow-md">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">Panel de Marketing</h1>
-              <p className="text-green-200 mt-1">Gestiona campañas de email, plantillas y automatizaciones</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-green-200">
-                Usuario: {userRole === 'marketing' ? 'Marketing' : 'Administrador'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+  // Overlay para móvil
+  const renderOverlay = () => {
+    if (!isMobile || !isMobileOpen) return null;
+    
+    return (
+      <div 
+        className="fixed inset-0 bg-opacity-50 z-30"
+        onClick={() => setIsMobileOpen(false)}
+      />
+    );
+  };
 
-      {/* Tabs */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex space-x-1 overflow-x-auto py-2">
-            {[
-              { id: 'dashboard', label: 'Panel Principal' },
-              { id: 'templates', label: 'Plantillas' },
-              { id: 'campaigns', label: 'Campañas' },
-              { id: 'subscribers', label: 'Suscriptores' },
-              { id: 'segments', label: 'Segmentos' },
-              { id: 'automations', label: 'Automatizaciones' }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
-                  activeTab === tab.id
-                    ? 'bg-green-700 text-white'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Dashboard Tab */}
-        {activeTab === 'dashboard' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  // Renderizar contenido según la sección activa
+  const renderContent = () => {
+    switch (activeMenuItem) {
+      case 'dashboard':
+        return (
+          <div className="space-y-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="bg-white rounded-xl shadow-sm p-6 border border-gray-200"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Plantillas Activas</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats.activeTemplates}</p>
-                  <p className="text-xs text-gray-500 mt-1">de {stats.totalTemplates} totales</p>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Resumen de Marketing</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Plantillas Activas</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats.activeTemplates}</p>
+                      <p className="text-xs text-gray-500 mt-1">de {stats.totalTemplates} totales</p>
+                    </div>
+                    <div className="bg-blue-100 p-3 rounded-xl">
+                      <i className="fas fa-file-alt text-2xl text-blue-600"></i>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-blue-100 p-4 rounded-xl">
-                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-              </div>
-            </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="bg-white rounded-xl shadow-sm p-6 border border-gray-200"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Campañas Enviadas</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats.sentCampaigns}</p>
-                  <p className="text-xs text-gray-500 mt-1">de {stats.totalCampaigns} totales</p>
+                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Campañas Enviadas</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats.sentCampaigns}</p>
+                      <p className="text-xs text-gray-500 mt-1">de {stats.totalCampaigns} totales</p>
+                    </div>
+                    <div className="bg-green-100 p-3 rounded-xl">
+                      <i className="fas fa-envelope text-2xl text-green-600"></i>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-green-100 p-4 rounded-xl">
-                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-              </div>
-            </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="bg-white rounded-xl shadow-sm p-6 border border-gray-200"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Suscriptores Activos</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats.activeSubscribers}</p>
-                  <p className="text-xs text-gray-500 mt-1">de {stats.totalSubscribers} totales</p>
+                <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Suscriptores Activos</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats.activeSubscribers}</p>
+                      <p className="text-xs text-gray-500 mt-1">de {stats.totalSubscribers} totales</p>
+                    </div>
+                    <div className="bg-purple-100 p-3 rounded-xl">
+                      <i className="fas fa-users text-2xl text-purple-600"></i>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-purple-100 p-4 rounded-xl">
-                  <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-              </div>
-            </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="bg-white rounded-xl shadow-sm p-6 border border-gray-200"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Segmentos Activos</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats.activeSegments}</p>
-                  <p className="text-xs text-gray-500 mt-1">de {stats.totalSegments} totales</p>
+                <div className="bg-orange-50 rounded-lg p-4 border border-orange-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Segmentos Activos</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats.activeSegments}</p>
+                      <p className="text-xs text-gray-500 mt-1">de {stats.totalSegments} totales</p>
+                    </div>
+                    <div className="bg-orange-100 p-3 rounded-xl">
+                      <i className="fas fa-layer-group text-2xl text-orange-600"></i>
+                    </div>
+                  </div>
                 </div>
-                <div className="bg-orange-100 p-4 rounded-xl">
-                  <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                </div>
-              </div>
-            </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="bg-white rounded-xl shadow-sm p-6 border border-gray-200"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Automatizaciones Activas</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats.activeAutomations}</p>
-                  <p className="text-xs text-gray-500 mt-1">de {stats.totalAutomations} totales</p>
-                </div>
-                <div className="bg-yellow-100 p-4 rounded-xl">
-                  <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
+                <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600">Automatizaciones Activas</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats.activeAutomations}</p>
+                      <p className="text-xs text-gray-500 mt-1">de {stats.totalAutomations} totales</p>
+                    </div>
+                    <div className="bg-yellow-100 p-3 rounded-xl">
+                      <i className="fas fa-cogs text-2xl text-yellow-600"></i>
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>
           </div>
-        )}
+        );
 
-        {/* Templates Tab */}
-        {activeTab === 'templates' && (
+      case 'templates':
+        return (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <div>
@@ -1002,10 +1040,10 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
               )}
             </div>
           </div>
-        )}
+        );
 
-        {/* Campaigns Tab */}
-        {activeTab === 'campaigns' && (
+      case 'campaigns':
+        return (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <div>
@@ -1096,10 +1134,10 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
               )}
             </div>
           </div>
-        )}
+        );
 
-        {/* Subscribers Tab */}
-        {activeTab === 'subscribers' && (
+      case 'subscribers':
+        return (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">Suscriptores</h2>
@@ -1145,10 +1183,10 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
               )}
             </div>
           </div>
-        )}
+        );
 
-        {/* Segments Tab */}
-        {activeTab === 'segments' && (
+      case 'segments':
+        return (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <div>
@@ -1222,10 +1260,10 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
               )}
             </div>
           </div>
-        )}
+        );
 
-        {/* Automations Tab */}
-        {activeTab === 'automations' && (
+      case 'automations':
+        return (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <div>
@@ -1312,10 +1350,100 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
               )}
             </div>
           </div>
-        )}
-      </div>
+        );
 
-      {/* Template Modal */}
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="flex h-screen bg-gray-100">
+      {renderOverlay()}
+      
+      <AnimatePresence>
+        {(!isMobile || isMobileOpen) && (
+          <motion.div 
+            className={`bg-green-900 text-white shadow-lg h-screen z-40 overflow-y-auto
+              ${isMobile ? 'fixed top-0 left-0 w-64' : 'w-64 sticky top-0'}`}
+            initial={{ x: -300, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.3, type: 'spring', stiffness: 100 }}
+          >
+            {/* Titulo del panel */}
+            <div className="p-4 text-center border-b border-green-700">
+              <h1 className="text-xl font-bold">Panel de Marketing</h1>
+              <div className="text-gray-400 text-sm mt-1">
+                Club ViveVerde
+              </div>
+            </div>
+            
+            {/* Menu de navegacion */}
+            <nav className="mt-2">
+              <ul>
+                {menuItems.map((item) => (
+                  <li key={item.id} className="mb-1">
+                    <button
+                      onClick={() => handleMenuItemClick(item.id)}
+                      className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200
+                        ${activeMenuItem === item.id 
+                          ? 'bg-green-700 border-l-4 border-white font-medium' 
+                          : 'hover:bg-green-800'
+                        }`}
+                    >
+                      <i className={`fas ${item.icon} mr-3 w-5 text-center`}></i>
+                      <span>{item.name}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+            
+            {/* Footer con informacion del usuario */}
+            <div className="absolute bottom-0 w-full p-4 border-t border-green-700">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-green-700 flex items-center justify-center">
+                  <i className="fas fa-user"></i>
+                </div>
+                <div>
+                  <p className="font-medium">
+                    {userRole === 'marketing' ? 'Marketing' : 'Administrador'}
+                  </p>
+                  <Link href="/dashboard" className="text-sm text-green-300 hover:text-white">
+                    Mi perfil
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Contenido principal */}
+      <motion.div
+        className="flex-1 overflow-auto"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        {/* Header con titulo y descripcion (estilo Cajero) */}
+        <div className="max-w-7xl mx-auto py-6 px-4">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <h1 className="text-2xl font-bold text-green-800 mb-2">Panel de Marketing</h1>
+            <p className="text-gray-600">Gestiona campañas de email, plantillas, suscriptores, segmentos y automatizaciones.</p>
+          </motion.div>
+          
+          {/* Contenido segun la seccion seleccionada */}
+          {renderContent()}
+        </div>
+      </motion.div>
+
+      {/* Modales */}
+      {/* Modal de Plantilla */}
       <AnimatePresence>
         {showTemplateModal && (
           <motion.div
@@ -1440,7 +1568,7 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
         )}
       </AnimatePresence>
 
-      {/* Campaign Modal */}
+      {/* Modal de Campaña */}
       <AnimatePresence>
         {showCampaignModal && (
           <motion.div
@@ -1555,7 +1683,7 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
         )}
       </AnimatePresence>
 
-      {/* Segment Modal */}
+      {/* Modal de Segmento */}
       <AnimatePresence>
         {showSegmentModal && (
           <motion.div
@@ -1688,7 +1816,7 @@ const MarketingDashboard: React.FC<MarketingDashboardProps> = ({ userRole }) => 
         )}
       </AnimatePresence>
 
-      {/* Automation Modal */}
+      {/* Modal de Automatización */}
       <AnimatePresence>
         {showAutomationModal && (
           <motion.div
