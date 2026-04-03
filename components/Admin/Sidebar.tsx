@@ -98,13 +98,12 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection = 'dashboard', onSectio
     // No mostrar el botón si no es móvil o si el sidebar está abierto
     if (!isMobile || isMobileOpen) return null;
     
-    // Botón transparente y sin funcionalidad
     return (
       <button 
-        onClick={(e) => e.preventDefault()}
-        className="fixed bottom-5 left-2 z-50 w-8 h-8 flex items-center justify-center bg-transparent shadow-none rounded-md text-transparent focus:outline-none cursor-default"
+        onClick={() => setIsMobileOpen(true)}
+        className="fixed bottom-5 left-2 z-50 w-8 h-8 flex items-center justify-center bg-green-700 shadow-md rounded-md text-white focus:outline-none"
         style={{bottom: '20px', top: 'auto'}}
-        aria-label="Menú"
+        aria-label="Abrir menú"
       >
         <i className="fas fa-arrow-right text-sm"></i>
       </button>
