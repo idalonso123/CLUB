@@ -129,17 +129,23 @@ const NavLinks: React.FC<NavLinksProps> = ({
             <motion.button
               className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
               onClick={() => {
-                // Usar window.history.pushState en lugar de router.push para mantener consistencia
-                // con el menú interno del MarketingDashboard
-                if (typeof window !== 'undefined') {
-                  const url = new URL(window.location.href);
-                  url.pathname = '/marketing';
-                  url.searchParams.delete('section');
-                  window.history.pushState({}, '', url.toString());
-                  // Disparar evento popstate para que el MarketingDashboard detecte el cambio
-                  window.dispatchEvent(new PopStateEvent('popstate'));
+                // Navegar a la página principal de marketing
+                // Primero cerrar el menú
+                if (closeMenu) {
+                  closeMenu();
                 }
-                if (closeMenu) closeMenu();
+                
+                // Luego navegar después de un pequeño delay para asegurar que el menú se cierre
+                setTimeout(() => {
+                  // Si estamos en marketing, recargar la página para resetear el estado
+                  if (isOnMarketingPage) {
+                    // Resetear parámetros de query y recargar
+                    window.location.href = '/marketing';
+                  } else {
+                    // Navegar a marketing
+                    router.push('/marketing');
+                  }
+                }, 150);
               }}
             >
               <i className="fas fa-tachometer-alt mr-3 w-5 text-center"></i>
@@ -151,17 +157,22 @@ const NavLinks: React.FC<NavLinksProps> = ({
             <motion.button
               className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
               onClick={() => {
-                // Usar window.history.pushState en lugar de router.push para mantener consistencia
-                // con el menú interno del MarketingDashboard
-                if (typeof window !== 'undefined') {
-                  const url = new URL(window.location.href);
-                  url.pathname = '/marketing';
-                  url.searchParams.set('section', 'templates');
-                  window.history.pushState({}, '', url.toString());
-                  // Disparar evento popstate para que el MarketingDashboard detecte el cambio
-                  window.dispatchEvent(new PopStateEvent('popstate'));
+                // Si estamos en la página de marketing, usar window.history.pushState para cambiar sección
+                // Si no, usar router.push para navegación completa
+                if (isOnMarketingPage) {
+                  if (typeof window !== 'undefined') {
+                    const url = new URL(window.location.href);
+                    url.pathname = '/marketing';
+                    url.searchParams.set('section', 'templates');
+                    window.history.pushState({}, '', url.toString());
+                    window.dispatchEvent(new PopStateEvent('popstate'));
+                  }
+                } else {
+                  router.push('/marketing?section=templates');
                 }
-                if (closeMenu) closeMenu();
+                if (closeMenu) {
+                  setTimeout(() => closeMenu(), 100);
+                }
               }}
             >
               <i className="fas fa-file-alt mr-3 w-5 text-center"></i>
@@ -173,17 +184,22 @@ const NavLinks: React.FC<NavLinksProps> = ({
             <motion.button
               className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
               onClick={() => {
-                // Usar window.history.pushState en lugar de router.push para mantener consistencia
-                // con el menú interno del MarketingDashboard
-                if (typeof window !== 'undefined') {
-                  const url = new URL(window.location.href);
-                  url.pathname = '/marketing';
-                  url.searchParams.set('section', 'campaigns');
-                  window.history.pushState({}, '', url.toString());
-                  // Disparar evento popstate para que el MarketingDashboard detecte el cambio
-                  window.dispatchEvent(new PopStateEvent('popstate'));
+                // Si estamos en la página de marketing, usar window.history.pushState para cambiar sección
+                // Si no, usar router.push para navegación completa
+                if (isOnMarketingPage) {
+                  if (typeof window !== 'undefined') {
+                    const url = new URL(window.location.href);
+                    url.pathname = '/marketing';
+                    url.searchParams.set('section', 'campaigns');
+                    window.history.pushState({}, '', url.toString());
+                    window.dispatchEvent(new PopStateEvent('popstate'));
+                  }
+                } else {
+                  router.push('/marketing?section=campaigns');
                 }
-                if (closeMenu) closeMenu();
+                if (closeMenu) {
+                  setTimeout(() => closeMenu(), 100);
+                }
               }}
             >
               <i className="fas fa-envelope mr-3 w-5 text-center"></i>
@@ -195,17 +211,22 @@ const NavLinks: React.FC<NavLinksProps> = ({
             <motion.button
               className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
               onClick={() => {
-                // Usar window.history.pushState en lugar de router.push para mantener consistencia
-                // con el menú interno del MarketingDashboard
-                if (typeof window !== 'undefined') {
-                  const url = new URL(window.location.href);
-                  url.pathname = '/marketing';
-                  url.searchParams.set('section', 'subscribers');
-                  window.history.pushState({}, '', url.toString());
-                  // Disparar evento popstate para que el MarketingDashboard detecte el cambio
-                  window.dispatchEvent(new PopStateEvent('popstate'));
+                // Si estamos en la página de marketing, usar window.history.pushState para cambiar sección
+                // Si no, usar router.push para navegación completa
+                if (isOnMarketingPage) {
+                  if (typeof window !== 'undefined') {
+                    const url = new URL(window.location.href);
+                    url.pathname = '/marketing';
+                    url.searchParams.set('section', 'subscribers');
+                    window.history.pushState({}, '', url.toString());
+                    window.dispatchEvent(new PopStateEvent('popstate'));
+                  }
+                } else {
+                  router.push('/marketing?section=subscribers');
                 }
-                if (closeMenu) closeMenu();
+                if (closeMenu) {
+                  setTimeout(() => closeMenu(), 100);
+                }
               }}
             >
               <i className="fas fa-users mr-3 w-5 text-center"></i>
@@ -217,17 +238,22 @@ const NavLinks: React.FC<NavLinksProps> = ({
             <motion.button
               className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
               onClick={() => {
-                // Usar window.history.pushState en lugar de router.push para mantener consistencia
-                // con el menú interno del MarketingDashboard
-                if (typeof window !== 'undefined') {
-                  const url = new URL(window.location.href);
-                  url.pathname = '/marketing';
-                  url.searchParams.set('section', 'segments');
-                  window.history.pushState({}, '', url.toString());
-                  // Disparar evento popstate para que el MarketingDashboard detecte el cambio
-                  window.dispatchEvent(new PopStateEvent('popstate'));
+                // Si estamos en la página de marketing, usar window.history.pushState para cambiar sección
+                // Si no, usar router.push para navegación completa
+                if (isOnMarketingPage) {
+                  if (typeof window !== 'undefined') {
+                    const url = new URL(window.location.href);
+                    url.pathname = '/marketing';
+                    url.searchParams.set('section', 'segments');
+                    window.history.pushState({}, '', url.toString());
+                    window.dispatchEvent(new PopStateEvent('popstate'));
+                  }
+                } else {
+                  router.push('/marketing?section=segments');
                 }
-                if (closeMenu) closeMenu();
+                if (closeMenu) {
+                  setTimeout(() => closeMenu(), 100);
+                }
               }}
             >
               <i className="fas fa-layer-group mr-3 w-5 text-center"></i>
@@ -239,17 +265,22 @@ const NavLinks: React.FC<NavLinksProps> = ({
             <motion.button
               className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
               onClick={() => {
-                // Usar window.history.pushState en lugar de router.push para mantener consistencia
-                // con el menú interno del MarketingDashboard
-                if (typeof window !== 'undefined') {
-                  const url = new URL(window.location.href);
-                  url.pathname = '/marketing';
-                  url.searchParams.set('section', 'automations');
-                  window.history.pushState({}, '', url.toString());
-                  // Disparar evento popstate para que el MarketingDashboard detecte el cambio
-                  window.dispatchEvent(new PopStateEvent('popstate'));
+                // Si estamos en la página de marketing, usar window.history.pushState para cambiar sección
+                // Si no, usar router.push para navegación completa
+                if (isOnMarketingPage) {
+                  if (typeof window !== 'undefined') {
+                    const url = new URL(window.location.href);
+                    url.pathname = '/marketing';
+                    url.searchParams.set('section', 'automations');
+                    window.history.pushState({}, '', url.toString());
+                    window.dispatchEvent(new PopStateEvent('popstate'));
+                  }
+                } else {
+                  router.push('/marketing?section=automations');
                 }
-                if (closeMenu) closeMenu();
+                if (closeMenu) {
+                  setTimeout(() => closeMenu(), 100);
+                }
               }}
             >
               <i className="fas fa-cogs mr-3 w-5 text-center"></i>
