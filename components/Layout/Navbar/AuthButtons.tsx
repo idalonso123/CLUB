@@ -30,18 +30,10 @@ const AuthButtons: React.FC<AuthButtonsProps> = ({
     router.push(href);
   };
   
-  // Función para obtener el enlace de perfil según el rol del usuario
+  // Función para obtener el enlace de perfil - Siempre lleva a /dashboard para editar datos personales
   const getProfileLink = (role: string | null | undefined): string => {
-    switch (role) {
-      case "admin":
-        return "/admin";
-      case "cajero":
-        return "/teller";
-      case "marketing":
-        return "/marketing";
-      default:
-        return "/dashboard";
-    }
+    // Siempre llevar a /dashboard para que todos los usuarios puedan editar sus datos personales
+    return "/dashboard";
   };
 
   // Obtener el enlace correcto para el perfil

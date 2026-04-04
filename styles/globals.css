@@ -56,6 +56,13 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
 }
 
+/* En versión móvil, el Navbar debe estar pegado a la parte superior */
+@media (max-width: 767px) {
+  .app-navbar {
+    top: 0 !important;
+  }
+}
+
 /* Área de contenido principal con fondo bloqueado */
 .app-main-content {
   flex-grow: 1 !important;
@@ -69,6 +76,15 @@ body {
   /* background-attachment: fixed asegura que el fondo no se desplace
      con el contenido, permaneciendo siempre visible */
   min-height: calc(100vh - 130px) !important;
+}
+
+/* En versión móvil, el contenido no tiene TopBar, solo Navbar */
+@media (max-width: 767px) {
+  .app-main-content {
+    margin-top: 89px !important;
+    /* 89px = solo la altura del Navbar */
+    min-height: calc(100vh - 89px) !important;
+  }
 }
 
 /* Contenedor del contenido de la página */

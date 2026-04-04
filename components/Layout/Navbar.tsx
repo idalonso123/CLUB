@@ -142,7 +142,7 @@ const Navbar = () => {
           {/* Botón de menú móvil */}
           <motion.button
             onClick={toggleMenu}
-            className="menu-button md:hidden text-2xl bg-green-50 p-2 rounded-full z-20 absolute left-2"
+            className="menu-button md:hidden text-2xl bg-green-50 p-2 rounded-full z-20 absolute right-2"
             aria-label="Abrir menú"
           >
             <i className={`fa-solid ${isMenuOpen ? "fa-times" : "fa-bars"}`}></i>

@@ -34,7 +34,7 @@ const Logo: React.FC<LogoProps> = ({ white = false }) => {
             whileTap="tap"
         >
           <Link href="/">
-            <div className="flex items-center relative">
+            <div className="flex items-center justify-center relative">
               {/* Logo como imagen */}
               <img 
                 src="/icons/Logo-ViveVerde-Header.png" 

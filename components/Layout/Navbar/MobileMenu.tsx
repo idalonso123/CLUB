@@ -49,6 +49,21 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   // Esto sucede cuando isAdminOnly es true Y estamos en la página de marketing
   const isAdminInMarketing = isAdminOnly && isOnMarketingPage;
 
+  // Al montar el componente, restaurar el estado del sidebar desde sessionStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedAdminMenu = sessionStorage.getItem('mobileMenuIsInAdminMenu');
+      const savedMarketingMenu = sessionStorage.getItem('mobileMenuIsInMarketingMenu');
+      
+      if (savedAdminMenu === 'true') {
+        setIsInAdminMenu(true);
+      }
+      if (savedMarketingMenu === 'true') {
+        setIsInMarketingMenu(true);
+      }
+    }
+  }, []); // Solo se ejecuta al montar el componente
+
   // Cuando se abre el menú y estamos en la página de marketing, mostrar submenú de marketing
   useEffect(() => {
     if (isMenuOpen && isOnMarketingPage) {
@@ -57,16 +72,16 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     }
   }, [isMenuOpen, isOnMarketingPage]);
 
-  // Resetear los submenús cuando se cierra el menú
+  // Guardar el estado del sidebar cuando cambia
   useEffect(() => {
-    if (!isMenuOpen) {
-      // Solo resetear si no estamos en la página de marketing
-      if (!isOnMarketingPage) {
-        setIsInAdminMenu(false);
-        setIsInMarketingMenu(false);
-      }
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('mobileMenuIsInAdminMenu', isInAdminMenu.toString());
+      sessionStorage.setItem('mobileMenuIsInMarketingMenu', isInMarketingMenu.toString());
     }
-  }, [isMenuOpen, isOnMarketingPage]);
+  }, [isInAdminMenu, isInMarketingMenu]);
+
+  // NO resetear los submenús cuando se cierra el menú
+  // El estado se mantiene en sessionStorage para que al reabrir el menú permanezca en el sidebar
 
   // Animación para el sidebar (exactamente igual que Sidebar.tsx del admin)
   // El menú se desliza desde el lado izquierdo de la pantalla hacia la derecha

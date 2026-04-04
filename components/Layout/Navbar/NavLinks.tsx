@@ -39,8 +39,10 @@ const NavLinks: React.FC<NavLinksProps> = ({
   const isAdminInMarketing = isAdminOnly && isOnMarketingPage;
   
   // Función helper para cerrar el menú y navegar
-  const handleLinkClick = (href: string) => {
-    if (closeMenu) {
+  const handleLinkClick = (href: string, closeMenuOnNavigate: boolean = true) => {
+    // Si estamos en el sidebar (admin o marketing), NO cerrar el menú al navegar
+    // para mantener el estado del sidebar
+    if (closeMenuOnNavigate && closeMenu && !isInAdminMenu && !isInMarketingMenu) {
       closeMenu();
     }
     router.push(href);
