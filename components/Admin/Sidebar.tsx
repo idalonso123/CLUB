@@ -56,7 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection = 'dashboard', onSectio
 
   // Lista de todas las secciones disponibles
   const allSections = [
-    { id: 'dashboard', name: 'Panel de Control', icon: 'fa-tachometer-alt', route: '/admin/dashboard' },
+    { id: 'dashboard', name: 'Panel Principal', icon: 'fa-tachometer-alt', route: '/admin/dashboard' },
     { id: 'users', name: 'Usuarios', icon: 'fa-users', route: '/admin/users' },
     { id: 'rewards', name: 'Recompensas', icon: 'fa-gift', route: '/admin/rewards' },
     { id: 'mainpage', name: 'Página Principal', icon: 'fa-home', route: '/admin/mainpage' },
@@ -137,9 +137,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection = 'dashboard', onSectio
             animate="visible"
             exit="hidden"
           >
-            {/* Título del panel */}
+            {/* Titulo del panel - diferente para móvil y web */}
             <div className="p-4 text-center border-b border-green-700">
-              <h1 className="text-xl font-bold">Panel de Administración</h1>
+              <h1 className="text-xl font-bold">{isMobile ? 'Menu de Administracion' : 'Menu de Administracion'}</h1>
               <div className="text-gray-400 text-sm mt-1 transition-colors duration-200 hover:text-white">
                 Garcenar Jardineria SL
               </div>
@@ -168,21 +168,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection = 'dashboard', onSectio
             </nav>
             
             {/* Footer con información del usuario */}
-            <div className="absolute bottom-0 w-full p-4 border-t border-green-700">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-green-700 flex items-center justify-center">
-                  <i className="fas fa-user"></i>
-                </div>
-                <div>
-                  <p className="font-medium">
-                    {isMarketing ? 'Marketing' : 'Administrador'}
-                  </p>
-                  <Link href="/dashboard" className="text-sm text-green-300 hover:text-white">
-                    Mi perfil
-                  </Link>
-                </div>
-              </div>
-            </div>
+            {/* Eliminado el enlace "Mi perfil" del sidebar - se mantiene solo en header */}
           </motion.div>
         )}
       </AnimatePresence>

@@ -72,14 +72,6 @@ const DashboardSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <motion.h1
-        className="text-2xl font-bold text-green-800"
-        variants={itemVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        Panel de Control
-      </motion.h1>
 
       {/* Sección de estadísticas */}
       {error ? (

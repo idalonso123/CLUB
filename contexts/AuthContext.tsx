@@ -134,6 +134,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Efecto para cerrar sesión automáticamente al cerrar o abandonar la aplicación
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Limpiar almacenamiento local al cerrar/abandonar la aplicación
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('user');
+    };
+
+    // Parabeforeunload: cuando se cierra el navegador o la pestaña
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    // Paravisibilitychange: cuando se cambia de pestaña o se oculta la página
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        // Solo cerrar sesión si estaba logueado
+        const storedUser = localStorage.getItem('user') || sessionStorage.getItem('user');
+        if (storedUser) {
+          // Llamar al endpoint de logout en segundo plano
+          navigator.sendBeacon('/api/auth/logout', JSON.stringify({}));
+          localStorage.removeItem('user');
+          sessionStorage.removeItem('user');
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -145,6 +178,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
+}
+
+// Componente para detectar cierre/abandono de la aplicación
+export function SessionManager({ children }: { children: ReactNode }) {
+  const { logout, isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    // Detectar cuando el usuario cierra el navegador o la pestaña
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isAuthenticated) {
+        // Limpiar sesión antes de cerrar
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('user');
+        
+        // Llamar al endpoint de logout
+        const data = JSON.stringify({ type: 'unload' });
+        navigator.sendBeacon('/api/auth/logout', data);
+      }
+    };
+
+    // Detectar cuando el usuario cambia de pestaña o minimiza
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && isAuthenticated) {
+        // Limpiar sesión
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('user');
+        
+        // Llamar al endpoint de logout en segundo plano
+        const data = JSON.stringify({ type: 'visibility' });
+        navigator.sendBeacon('/api/auth/logout', data);
+      }
+    };
+
+    // Detectar desconexión de red
+    const handleOffline = () => {
+      if (isAuthenticated) {
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('user');
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [isAuthenticated]);
+
+  return <>{children}</>;
 }
 
 // Hook personalizado para usar el contexto

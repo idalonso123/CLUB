@@ -23,7 +23,7 @@ const TopBar: React.FC<TopBarProps> = ({ isAdminRoute }) => {
     <motion.div
       // app-topbar tiene estilos BLOQUEADOS con !important en globals.css
       // La clase adicional solo añade estilos visuales específicos
-      className={`app-topbar hidden md:block p-2 bg-green-900 text-white bg-[url('/banner/Top-bar-leafs-green.svg')] bg-cover`}
+      className={`app-topbar block p-2 bg-green-900 text-white bg-[url('/banner/Top-bar-leafs-green.svg')] bg-cover`}
     >
       <div className="relative max-w-7xl mx-auto px-4">
         {/* Teléfono */}

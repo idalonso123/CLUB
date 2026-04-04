@@ -1370,9 +1370,9 @@ const [activeMenuItem, setActiveMenuItem] = useState<MenuSection>(getInitialSect
             animate={{ x: 0, opacity: 1 }}
             transition={{ duration: 0.3, type: 'spring', stiffness: 100 }}
           >
-            {/* Titulo del panel */}
+            {/* Titulo del panel - diferente para móvil y web */}
             <div className="p-4 text-center border-b border-green-700">
-              <h1 className="text-xl font-bold">Panel de Marketing</h1>
+              <h1 className="text-xl font-bold">{isMobile ? 'Menu de Marketing' : 'Menu de Marketing'}</h1>
               <div className="text-gray-400 text-sm mt-1">
                 Club ViveVerde
               </div>
@@ -1399,22 +1399,8 @@ const [activeMenuItem, setActiveMenuItem] = useState<MenuSection>(getInitialSect
               </ul>
             </nav>
             
-            {/* Footer con informacion del usuario */}
-            <div className="absolute bottom-0 w-full p-4 border-t border-green-700">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-green-700 flex items-center justify-center">
-                  <i className="fas fa-user"></i>
-                </div>
-                <div>
-                  <p className="font-medium">
-                    {userRole === 'marketing' ? 'Marketing' : 'Administrador'}
-                  </p>
-                  <Link href="/dashboard" className="text-sm text-green-300 hover:text-white">
-                    Mi perfil
-                  </Link>
-                </div>
-              </div>
-            </div>
+            {/* Footer con información del usuario */}
+            {/* Eliminado el enlace "Mi perfil" del sidebar - se mantiene solo en header */}
           </motion.div>
         )}
       </AnimatePresence>
@@ -1426,20 +1412,8 @@ const [activeMenuItem, setActiveMenuItem] = useState<MenuSection>(getInitialSect
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
-        {/* Header con titulo y descripcion (estilo Cajero) */}
-        <div className="max-w-7xl mx-auto py-6 px-4">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
-          >
-            <h1 className="text-2xl font-bold text-green-800 mb-2">Panel de Marketing</h1>
-            <p className="text-gray-600">Gestiona campañas de email, plantillas, suscriptores, segmentos y automatizaciones.</p>
-          </motion.div>
-          
-          {/* Contenido segun la seccion seleccionada */}
-          {renderContent()}
-        </div>
+        {/* Contenido segun la seccion seleccionada */}
+        {renderContent()}
       </motion.div>
 
       {/* Modales */}

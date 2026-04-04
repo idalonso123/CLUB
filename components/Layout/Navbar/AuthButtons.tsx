@@ -46,6 +46,11 @@ const AuthButtons: React.FC<AuthButtonsProps> = ({
     ? "w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-red-800 border-l-4 border-transparent"
     : "bg-green-800 px-4 py-2 rounded-full text-white font-bold flex justify-center items-center hover:bg-red-600 transition duration-300 ease-in-out text-sm";
 
+  // Botón base con ancho fijo para que ambos botones tengan el mismo tamaño
+  const fixedWidthButtonClasses = isMobile
+    ? "w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800 border-l-4 border-transparent"
+    : "bg-green-800 px-6 py-2 rounded-full text-white font-bold flex justify-center items-center hover:bg-green-700 transition duration-300 ease-in-out text-sm min-w-[140px]";
+
   // Contenedor móvil - ajustar para el sidebar
   const containerClasses = isMobile ? "" : "";
 
@@ -73,19 +78,19 @@ const AuthButtons: React.FC<AuthButtonsProps> = ({
 
   if (isLoggedIn) {
     return (
-      <motion.div className="space-y-1">
+      <motion.div className="flex space-x-2 lg:space-x-4">
         <motion.button
           onClick={() => handleLinkClick("/dashboard")}
-          className={buttonBaseClasses}
+          className={fixedWidthButtonClasses}
         >
-          <i className="fa-solid fa-user mr-3 w-5 text-center"></i>
+          <i className="fa-solid fa-user mr-2 w-5 text-center"></i>
           <span>Mi Perfil</span>
         </motion.button>
         <motion.button
           onClick={handleLogoutClick}
           className={logoutButtonClasses}
         >
-          <i className="fa-solid fa-right-from-bracket mr-3 w-5 text-center"></i>
+          <i className="fa-solid fa-right-from-bracket mr-2 w-5 text-center"></i>
           <span>Cerrar Sesión</span>
         </motion.button>
       </motion.div>
