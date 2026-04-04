@@ -122,6 +122,9 @@ const Navbar = () => {
   // Verificar si el usuario es de marketing
   const isMarketing = userRole?.toLowerCase() === "marketing";
 
+  // Verificar si el usuario es solo cajero
+  const isCajero = userRole?.toLowerCase() === "cajero";
+
   return (
     <>
       {/* Barra superior - BLOQUEADA mediante CSS con !important */}
@@ -135,22 +138,22 @@ const Navbar = () => {
         // La clase adicional solo añade estilos específicos del componente
         className={`navbar app-navbar ${isAdminRoute ? 'admin-navbar-mode' : ''}`}
       >
-        <div className="relative mx-auto p-2 flex items-center justify-between">
-          {/* Logo */}
-          <motion.div
-            className="z-10 flex items-center"
-          >
-            <Logo />
-          </motion.div>
-
+        <div className="relative mx-auto p-2 flex items-center justify-between md:justify-between">
           {/* Botón de menú móvil */}
           <motion.button
             onClick={toggleMenu}
-            className="menu-button md:hidden text-2xl bg-green-50 p-2 rounded-full z-20"
+            className="menu-button md:hidden text-2xl bg-green-50 p-2 rounded-full z-20 absolute left-2"
             aria-label="Abrir menú"
           >
             <i className={`fa-solid ${isMenuOpen ? "fa-times" : "fa-bars"}`}></i>
           </motion.button>
+
+          {/* Logo - Centrado en móvil */}
+          <motion.div
+            className="z-10 flex items-center md:items-start"
+          >
+            <Logo />
+          </motion.div>
 
           {/* Links de navegación (escritorio) */}
           <NavLinks
@@ -166,6 +169,7 @@ const Navbar = () => {
             isAdmin={isAdmin}
             isAdminOnly={isAdminOnly}
             isMarketing={isMarketing}
+            isCajero={isCajero}
             isLoggedIn={isLoggedIn}
             isOnDashboard={isOnDashboard}
             handleLogout={handleLogout}
@@ -205,6 +209,7 @@ const Navbar = () => {
               isLoggedIn={isLoggedIn}
               isOnDashboard={isOnDashboard}
               handleLogout={handleLogout}
+              userRole={userRole}
             />
           </div>
         </div>

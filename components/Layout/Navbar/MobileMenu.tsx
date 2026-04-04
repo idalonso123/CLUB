@@ -9,6 +9,7 @@ interface MobileMenuProps {
   isAdmin: boolean;
   isAdminOnly: boolean;
   isMarketing?: boolean;
+  isCajero?: boolean;
   isLoggedIn: boolean;
   isOnDashboard: boolean;
   handleLogout: () => Promise<void>;
@@ -20,6 +21,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   isAdmin,
   isAdminOnly,
   isMarketing = false,
+  isCajero = false,
   isLoggedIn,
   isOnDashboard,
   handleLogout,
@@ -84,7 +86,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   // Determinar el título del menú según el submenú activo
   const getMenuTitle = () => {
     if (isInMarketingMenu) {
-      return 'Panel de Marketing';
+      return 'Menú de Marketing';
     }
     if (isInAdminMenu) {
       return 'Panel Administrativo';
@@ -92,7 +94,19 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     if (isOnSupportPage) {
       return 'Centro de Ayuda';
     }
-    return isLoggedIn ? 'Menú de Usuario' : 'Menú Principal';
+    if (isLoggedIn) {
+      if (isAdminOnly) {
+        return 'Menú de Administrador';
+      }
+      if (isCajero) {
+        return 'Menú de Cajero';
+      }
+      if (isMarketing) {
+        return 'Menú de Marketing';
+      }
+      return 'Menú de Usuario';
+    }
+    return 'Menú Principal';
   };
 
   // Determinar si mostrar el botón "Volver al Menú"

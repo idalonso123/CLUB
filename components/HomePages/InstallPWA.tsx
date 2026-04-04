@@ -8,21 +8,47 @@ type BeforeInstallPromptEvent = Event & {
 
 const InstallPWA = () => {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  
   useEffect(() => {
+    // Verificar si la app ya está instalada
+    const checkIfInstalled = () => {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+      const isIOSStandalone = (window as any).navigator.standalone === true;
+      setIsInstalled(isStandalone || isIOSStandalone);
+    };
+    
+    checkIfInstalled();
+    
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setInstallPrompt(e as BeforeInstallPromptEvent);
     };
     const handleAppInstalled = () => {
       console.log('PWA ya instalada');
+      setIsInstalled(true);
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     window.addEventListener('appinstalled', handleAppInstalled);
+    
+    // También escuchar cambios en el modo de visualización
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    const handleDisplayModeChange = (e: MediaQueryListEvent) => {
+      setIsInstalled(e.matches);
+    };
+    mediaQuery.addEventListener('change', handleDisplayModeChange);
+    
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
+      mediaQuery.removeEventListener('change', handleDisplayModeChange);
     };
   }, []);
+  
+  // Si la app ya está instalada, no mostrar el botón
+  if (isInstalled) {
+    return null;
+  }
   const handleInstallClick = async () => {
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
     const isAndroid = /Android/.test(navigator.userAgent);

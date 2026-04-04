@@ -320,7 +320,7 @@ const NavLinks: React.FC<NavLinksProps> = ({
               className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 ${getLinkClass("/admin/dashboard")}`}
             >
               <i className="fas fa-tachometer-alt mr-3 w-5 text-center"></i>
-              <span>Panel de Control</span>
+              <span>Panel Principal</span>
             </motion.button>
           </motion.div>
 
@@ -391,6 +391,41 @@ const NavLinks: React.FC<NavLinksProps> = ({
             >
               <i className="fas fa-database mr-3 w-5 text-center"></i>
               <span>Copias de seguridad</span>
+            </motion.button>
+          </motion.div>
+
+          {/* Separador antes de Mi perfil y Cerrar sesión */}
+          <motion.div className="border-t border-green-700 my-2"></motion.div>
+
+          {/* Mi perfil */}
+          <motion.div className="mb-1">
+            <Link
+              href="/dashboard"
+              className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800"
+              onClick={() => {
+                if (closeMenu) closeMenu();
+              }}
+            >
+              <i className="fas fa-user mr-3 w-5 text-center"></i>
+              <span>Mi perfil</span>
+            </Link>
+          </motion.div>
+
+          {/* Cerrar sesión */}
+          <motion.div className="mb-1">
+            <motion.button
+              onClick={() => {
+                if (handleLogout) {
+                  handleLogout();
+                }
+                if (closeMenu) {
+                  closeMenu();
+                }
+              }}
+              className="w-full text-left py-3 px-4 flex items-center transition-colors duration-200 hover:bg-green-800 text-white hover:text-gray-200"
+            >
+              <i className="fas fa-sign-out-alt mr-3 w-5 text-center"></i>
+              <span>Cerrar sesión</span>
             </motion.button>
           </motion.div>
         </>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { COMPANY_CONFIG } from "@/lib/config";
 
@@ -19,6 +19,27 @@ interface TopBarProps {
  * - width: 100%
  */
 const TopBar: React.FC<TopBarProps> = ({ isAdminRoute }) => {
+  // En versión móvil (pantallas pequeñas), no mostrar el TopBar
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkIfMobile);
+    };
+  }, []);
+  
+  // No mostrar el TopBar en versión móvil
+  if (isMobile) {
+    return null;
+  }
+  
   return (
     <motion.div
       // app-topbar tiene estilos BLOQUEADOS con !important en globals.css

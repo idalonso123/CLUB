@@ -101,6 +101,8 @@ export const config = {
     '/dashboard/:path*', 
     '/admin',
     '/admin/:path*', 
+    '/marketing',
+    '/marketing/:path*',
     '/perfil',
     '/perfil/:path*',
     '/puntos-fidelidad',

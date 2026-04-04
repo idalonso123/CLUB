@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { User } from "@/types/user";
 import { SearchFormProps, SacoItem, AddBalanceResult, PetCard } from "@/types/teller";
@@ -39,17 +39,17 @@ const TellerDashboard: React.FC<TellerDashboardProps> = ({ userRole }) => {
   const [petCardResult, setPetCardResult] = useState<{success: boolean; message: string} | null>(null);
   const [petCardLoading, setPetCardLoading] = useState(false);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setResults([]);
-    if (!searchTerm.trim()) {
-      setError("Introduce un término de búsqueda");
+  // Función de búsqueda con debounce
+  const performSearch = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setResults([]);
+      setError("");
       return;
     }
+    
     setSearching(true);
     try {
-      const res = await fetch(`/api/cajero/search-user?query=${encodeURIComponent(searchTerm)}`);
+      const res = await fetch(`/api/cajero/search-user?query=${encodeURIComponent(query)}`);
       const data = await res.json();
       if (data.success) {
         const users = (data.users || []).map((u: any) => ({
@@ -59,6 +59,7 @@ const TellerDashboard: React.FC<TellerDashboardProps> = ({ userRole }) => {
         setResults(users);
         setSelectedUser(null);
         setAddPointsResult(null);
+        setError("");
       } else {
         setError(data.message || "No se encontraron resultados");
       }
@@ -67,6 +68,29 @@ const TellerDashboard: React.FC<TellerDashboardProps> = ({ userRole }) => {
     } finally {
       setSearching(false);
     }
+  }, []);
+
+  // Efecto para debounce en la búsqueda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchTerm.trim()) {
+        performSearch(searchTerm);
+      } else {
+        setResults([]);
+        setError("");
+      }
+    }, 300); // 300ms de delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, performSearch]);
+
+  // Handler para la búsqueda (disparado desde el input)
+  // La búsqueda real se maneja con el useEffect de arriba
+  // Este handler está aquí para compatibilidad con el componente SearchForm
+  const handleSearch = async (e: React.ChangeEvent<HTMLInputElement> | React.FormEvent): Promise<void> => {
+    // La búsqueda se maneja con el useEffect de arriba
+    // Simplemente esperamos sin hacer nada
+    return Promise.resolve();
   };
 
   const handleSelectUser = (user: any) => {

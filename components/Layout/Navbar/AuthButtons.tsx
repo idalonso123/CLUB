@@ -9,6 +9,7 @@ interface AuthButtonsProps {
   handleLogout: () => Promise<void>;
   isMobile?: boolean;
   closeMenu?: () => void;
+  userRole?: string | null;
 }
 
 const AuthButtons: React.FC<AuthButtonsProps> = ({
@@ -16,7 +17,8 @@ const AuthButtons: React.FC<AuthButtonsProps> = ({
   isOnDashboard,
   handleLogout,
   isMobile = false,
-  closeMenu
+  closeMenu,
+  userRole
 }) => {
   const router = useRouter();
   
@@ -28,6 +30,23 @@ const AuthButtons: React.FC<AuthButtonsProps> = ({
     router.push(href);
   };
   
+  // Función para obtener el enlace de perfil según el rol del usuario
+  const getProfileLink = (role: string | null | undefined): string => {
+    switch (role) {
+      case "admin":
+        return "/admin";
+      case "cajero":
+        return "/teller";
+      case "marketing":
+        return "/marketing";
+      default:
+        return "/dashboard";
+    }
+  };
+
+  // Obtener el enlace correcto para el perfil
+  const profileLink = getProfileLink(userRole);
+
   // Función helper para cerrar sesión
   const handleLogoutClick = async () => {
     if (closeMenu) {
@@ -54,12 +73,12 @@ const AuthButtons: React.FC<AuthButtonsProps> = ({
   // Contenedor móvil - ajustar para el sidebar
   const containerClasses = isMobile ? "" : "";
 
-  // Si está en el dashboard, mostrar ambos botones separados
-  if (isOnDashboard && isMobile) {
+  // Si está logueado en móvil, mostrar ambos botones uno debajo del otro
+  if (isLoggedIn && isMobile) {
     return (
       <motion.div className="space-y-1">
         <motion.button
-          onClick={() => handleLinkClick("/dashboard")}
+          onClick={() => handleLinkClick(profileLink)}
           className={`${buttonBaseClasses} bg-green-700 border-l-white`}
         >
           <i className="fa-solid fa-user mr-3 w-5 text-center"></i>
@@ -80,7 +99,7 @@ const AuthButtons: React.FC<AuthButtonsProps> = ({
     return (
       <motion.div className="flex space-x-2 lg:space-x-4">
         <motion.button
-          onClick={() => handleLinkClick("/dashboard")}
+          onClick={() => handleLinkClick(profileLink)}
           className={fixedWidthButtonClasses}
         >
           <i className="fa-solid fa-user mr-2 w-5 text-center"></i>
