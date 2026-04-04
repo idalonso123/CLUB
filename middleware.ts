@@ -59,7 +59,10 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(dashboardUrl);
       }
       
-      // Redirigir desde /dashboard, /puntos-fidelidad, /carnets-mascotas, /rewards si es admin, cajero o marketing
+      // Permitir que todos los usuarios (incluidos admin, cajero y marketing) accedan a /dashboard
+      // /dashboard es la página de perfil de usuario donde pueden editar sus datos personales
+      // Los redirects específicos están comentados para permitir acceso a /dashboard
+      /*
       if (!isClient && (
           request.nextUrl.pathname === '/dashboard' ||
           request.nextUrl.pathname.startsWith('/dashboard') ||
@@ -79,6 +82,7 @@ export async function middleware(request: NextRequest) {
           return NextResponse.redirect(new URL('/marketing', request.url));
         }
       }
+      */
       
       // Si marketing intenta acceder a otras secciones del admin (no /marketing)
       if (isMarketing && 

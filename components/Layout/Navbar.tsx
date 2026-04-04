@@ -84,6 +84,13 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
+      // Limpiar el estado del menú móvil antes de cerrar sesión
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('mobileMenuIsInAdminMenu');
+        sessionStorage.removeItem('mobileMenuIsInMarketingMenu');
+        sessionStorage.removeItem('soportePreviousPage');
+      }
+      
       setIsLoggedIn(false);
       setUserRole("");
 

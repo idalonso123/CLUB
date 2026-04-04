@@ -72,6 +72,31 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     }
   }, [isMenuOpen, isOnMarketingPage]);
 
+  // Cuando se abre el menú y NO estamos en marketing ni soporte, resetear submenús
+  // para mostrar el menú principal completo con todas las opciones
+  // EXCEPTO para usuarios de marketing que deben mantener su submenú completo
+  useEffect(() => {
+    if (isMenuOpen && !isOnMarketingPage && !isOnSupportPage) {
+      // Para usuarios de marketing, mantener el submenú completo de marketing
+      // incluso cuando están en otras páginas como Mi Perfil
+      if (!isMarketing) {
+        // Para usuarios NO marketing, resetear estados de submenú
+        setIsInMarketingMenu(false);
+        setIsInAdminMenu(false);
+        
+        // Limpiar sessionStorage para evitar estados inconsistentes
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('mobileMenuIsInAdminMenu');
+          sessionStorage.removeItem('mobileMenuIsInMarketingMenu');
+        }
+      } else {
+        // Para usuarios marketing, asegurar que se muestre el submenú completo
+        setIsInMarketingMenu(true);
+        setIsInAdminMenu(false);
+      }
+    }
+  }, [isMenuOpen, isOnMarketingPage, isOnSupportPage, isMarketing]);
+
   // Guardar el estado del sidebar cuando cambia
   useEffect(() => {
     if (typeof window !== 'undefined') {

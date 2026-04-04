@@ -40,9 +40,8 @@ const NavLinks: React.FC<NavLinksProps> = ({
   
   // Función helper para cerrar el menú y navegar
   const handleLinkClick = (href: string, closeMenuOnNavigate: boolean = true) => {
-    // Si estamos en el sidebar (admin o marketing), NO cerrar el menú al navegar
-    // para mantener el estado del sidebar
-    if (closeMenuOnNavigate && closeMenu && !isInAdminMenu && !isInMarketingMenu) {
+    // Cerrar el menú móvil al navegar - igual para admin que para marketing
+    if (closeMenu && closeMenu) {
       closeMenu();
     }
     router.push(href);
@@ -105,8 +104,9 @@ const NavLinks: React.FC<NavLinksProps> = ({
       );
     }
 
-    // Si está en la página de marketing Y (es usuario de marketing O es admin que accedió desde su menú), mostrar submenú de marketing
-    if ((isOnMarketingPage && isMarketing) || (isOnMarketingPage && isAdminOnly)) {
+    // Si está en el submenú de marketing (desde cualquier página, incluyendo Mi Perfil)
+    // O si está en la página de marketing
+    if (isMarketing && (isInMarketingMenu || isOnMarketingPage)) {
       return (
         <>
           {/* Botón Volver a Administrador (solo cuando el admin accedió a marketing desde su menú) */}
