@@ -92,7 +92,10 @@ async function fetchRecentActivity(limit: number): Promise<ActivityItem[]> {
   // Recopilar actividades válidas, ignorando fallos parciales
   const allActivities: ActivityItem[] = [];
 
-  for (const result of results) {
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+    const endpoint = endpoints[i];
+    
     if (result.status === 'fulfilled') {
       const { source, offset, logs } = result.value;
       
@@ -144,7 +147,7 @@ async function fetchRecentActivity(limit: number): Promise<ActivityItem[]> {
       allActivities.push(...mappedActivities);
     } else {
       // Log del fallo para debugging, pero no lanzar error
-      console.warn(`Failed to fetch ${source} logs:`, result.reason);
+      console.warn(`Failed to fetch ${endpoint.source} logs:`, result.reason);
     }
   }
 

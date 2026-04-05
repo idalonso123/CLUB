@@ -1,10 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import StatsGroup from './StatsGroup';
-import useStats from '@/components/Admin/Dashboard/hooks/useStats';
+import { useStats } from '@/components/Admin/Dashboard/hooks/useStats';
 
 const StatsSection: React.FC = () => {
-  const { stats, timeRange, loading, error, refresh } = useStats();
+  const { stats, timeRange, isLoading, error, refetch } = useStats();
   
   // Formatear fechas para mostrar
   const formatDateRange = () => {
@@ -30,14 +30,14 @@ const StatsSection: React.FC = () => {
           <p className="text-sm text-gray-500">{formatDateRange()}</p>
         </div>
         <motion.button
-          onClick={refresh}
+          onClick={refetch}
           className="p-2 text-gray-500 hover:text-gray-700 focus:outline-none"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           title="Actualizar estadísticas"
-          disabled={loading}
+          disabled={isLoading}
         >
-          <i className={`fas fa-sync ${loading ? 'animate-spin' : ''}`}></i>
+          <i className={`fas fa-sync ${isLoading ? 'animate-spin' : ''}`}></i>
         </motion.button>
       </div>
       
@@ -45,12 +45,12 @@ const StatsSection: React.FC = () => {
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
           <div className="flex">
             <i className="fas fa-exclamation-circle mt-1 mr-2"></i>
-            <span>{error}</span>
+            <span>{error?.message || 'Error desconocido'}</span>
           </div>
         </div>
       )}
       
-      <StatsGroup stats={stats} loading={loading} />
+      <StatsGroup stats={stats} loading={isLoading} />
     </div>
   );
 };

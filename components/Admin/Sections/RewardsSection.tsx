@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import useRewards from '@/components/Admin/Rewards/hooks/useRewards';
+import { useRewardsLegacy } from '@/components/Admin/Rewards/hooks/useRewards';
 import RewardCard from '@/components/Admin/Rewards/RewardCard';
 import RewardFormModal from '@/components/Admin/Rewards/RewardFormModal';
 import DeleteConfirmationModal from '@/components/Admin/Rewards/DeleteConfirmationModal';
@@ -44,7 +44,7 @@ const RewardsSection: React.FC = () => {
     addReward, 
     updateReward, 
     deleteReward 
-  } = useRewards();
+  } = useRewardsLegacy();
 
   // Registrar callback para actualizar cuando se añade recompensa desde otro lugar
   useEffect(() => {
@@ -157,7 +157,7 @@ const RewardsSection: React.FC = () => {
   if (error) {
     return (
       <div className="bg-red-50 p-4 rounded-lg text-center">
-        <p className="text-red-700 mb-2">{error}</p>
+        <p className="text-red-700 mb-2">{error?.message || 'Error desconocido'}</p>
         <button 
           onClick={fetchRewards}
           className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"

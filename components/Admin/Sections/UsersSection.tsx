@@ -63,7 +63,6 @@ const UsersSection: React.FC = () => {
     handleSearch,
     filters,
     setFilters,
-    applyFilters,
     resetFilters,
     setUsers,
 
@@ -75,42 +74,39 @@ const UsersSection: React.FC = () => {
 
     // Estado para modales
     selectedUser,
-    setSelectedUser,
     isModalOpen,
-    setIsModalOpen,
     isEditModalOpen,
-    setIsEditModalOpen,
     isPointsModalOpen,
-    setIsPointsModalOpen,
     isDeleteModalOpen,
-    setIsDeleteModalOpen,
     userToDelete,
-    setUserToDelete,
     userToUpdateStatus,
-    setUserToUpdateStatus,
     isStatusModalOpen,
-    setIsStatusModalOpen,
 
     // Estado y funciones de suscripción
     isUnsubscribeModalOpen,
-    setIsUnsubscribeModalOpen,
     userToUnsubscribe,
-    setUserToUnsubscribe,
     isSubscribing,
     handleSubscriptionChange,
     confirmUnsubscribe,
-    openUnsubscribeModal
+    openUnsubscribeModal,
+
+    // Funciones para abrir/cerrar modales
+    openUserModal,
+    openEditModal,
+    openPointsModal,
+    openDeleteModal,
+    openStatusModal,
+    closeModal
   } = useUsers();
 
   // Handlers para acciones de usuarios
   const handleUserSelect = (user: User) => {
-    setSelectedUser(user);
-    setIsModalOpen(true);
+    openUserModal(user);
   };
 
   // Handler para gestionar carnets animales
   const handleManagePetCards = async (user: User) => {
-    setSelectedUser(user);
+    openUserModal(user);
     setPetCardResult(null);
     await fetchUserPetCards(user.id);
     setIsPetCardModalOpen(true);
@@ -307,32 +303,28 @@ const UsersSection: React.FC = () => {
   };
 
   const handleEditUser = (user: User) => {
-    setSelectedUser(user);
-    setIsEditModalOpen(true);
-    setIsModalOpen(false); // Cerrar el modal de detalles si está abierto
+    openEditModal(user);
+    closeModal('isModalOpen'); // Cerrar el modal de detalles si está abierto
   };
 
   const handleAdjustPoints = (user: User) => {
-    setSelectedUser(user);
-    setIsPointsModalOpen(true);
-    setIsModalOpen(false); // Cerrar el modal de detalles si está abierto
+    openPointsModal(user);
+    closeModal('isModalOpen'); // Cerrar el modal de detalles si está abierto
   };
 
   const handleDeleteUserBtn = (user: User) => {
-    setUserToDelete(user);
-    setIsDeleteModalOpen(true);
-    setIsModalOpen(false); // Cerrar el modal de detalles si está abierto
+    openDeleteModal(user);
+    closeModal('isModalOpen'); // Cerrar el modal de detalles si está abierto
   };
 
   const handleUpdateStatusBtn = (user: User) => {
-    setUserToUpdateStatus(user);
-    setIsStatusModalOpen(true);
-    setIsModalOpen(false); // Cerrar el modal de detalles si está abierto
+    openStatusModal(user);
+    closeModal('isModalOpen'); // Cerrar el modal de detalles si está abierto
   };
 
-  // Función auxiliar para aplicar filtros (soluciona el problema de pasar argumentos)
-  const handleApplyFilters = () => {
-    applyFilters();
+  // Función auxiliar para resetear filtros
+  const handleResetFilters = () => {
+    resetFilters();
   };
 
   if (isLoading) {
@@ -373,7 +365,7 @@ const UsersSection: React.FC = () => {
         handleSearch={handleSearch}
         filters={filters}
         setFilters={setFilters}
-        applyFilters={handleApplyFilters}
+        applyFilters={handleResetFilters}
         resetFilters={resetFilters}
         variants={itemVariants}
       />
@@ -395,7 +387,7 @@ const UsersSection: React.FC = () => {
       {isModalOpen && selectedUser && (
         <UserDetailsModal 
           user={selectedUser} 
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => closeModal('isModalOpen')}
           onEdit={handleEditUser}
           onAdjustPoints={handleAdjustPoints}
           onDelete={handleDeleteUserBtn}
@@ -408,7 +400,7 @@ const UsersSection: React.FC = () => {
       {isEditModalOpen && selectedUser && (
         <EditUserModal 
           user={selectedUser} 
-          onClose={() => setIsEditModalOpen(false)}
+          onClose={() => closeModal('isEditModalOpen')}
           onSave={handleSaveUser}
         />
       )}
@@ -417,7 +409,7 @@ const UsersSection: React.FC = () => {
       {isPointsModalOpen && selectedUser && (
         <AdjustPointsModal 
           user={selectedUser} 
-          onClose={() => setIsPointsModalOpen(false)}
+          onClose={() => closeModal('isPointsModalOpen')}
           onSave={handleSavePoints}
         />
       )}
@@ -428,8 +420,7 @@ const UsersSection: React.FC = () => {
           user={userToDelete} 
           onConfirm={confirmDeleteUser}
           onCancel={() => {
-            setIsDeleteModalOpen(false);
-            setUserToDelete(null);
+            closeModal('isDeleteModalOpen');
           }}
         />
       )}
@@ -440,8 +431,7 @@ const UsersSection: React.FC = () => {
           user={userToUpdateStatus}
           onConfirm={handleToggleUserStatus}
           onCancel={() => {
-            setIsStatusModalOpen(false);
-            setUserToUpdateStatus(null);
+            closeModal('isStatusModalOpen');
           }}
         />
       )}
@@ -451,8 +441,7 @@ const UsersSection: React.FC = () => {
         <UnsubscribeModal
           isOpen={isUnsubscribeModalOpen}
           onClose={() => {
-            setIsUnsubscribeModalOpen(false);
-            setUserToUnsubscribe(null);
+            closeModal('isUnsubscribeModalOpen');
           }}
           user={userToUnsubscribe}
           onConfirm={confirmUnsubscribe}

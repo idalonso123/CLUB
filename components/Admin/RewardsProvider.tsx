@@ -2,7 +2,7 @@ import React, { useState, ReactNode, useRef, useCallback } from 'react';
 import { RewardsContext } from '@/components/Admin/Sections/RewardsSection';
 import RewardFormModal from '@/components/Admin/Rewards/RewardFormModal';
 import { Reward } from '@/types/rewards';
-import useRewards from '@/components/Admin/Rewards/hooks/useRewards';
+import { useRewardsLegacy } from '@/components/Admin/Rewards/hooks/useRewards';
 
 interface RewardsProviderProps {
   children: ReactNode;
@@ -26,7 +26,7 @@ export const unregisterRewardsRefreshCallback = () => {
 
 const RewardsProvider: React.FC<RewardsProviderProps> = ({ children }) => {
   const [modal, setModal] = useState<ModalType | null>(null);
-  const { addReward } = useRewards(false); // No cargar automáticamente
+  const { addReward } = useRewardsLegacy(false); // No cargar automáticamente
   
   const openAddModal = () => setModal({ type: 'add' });
 

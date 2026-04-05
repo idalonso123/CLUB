@@ -1,7 +1,7 @@
 import React, { useState, useContext } from "react";
 import { motion } from "framer-motion";
 import StatsGroup from "@/components/Admin/Dashboard/StatsGroup";
-import useStats from "@/components/Admin/Dashboard/hooks/useStats";
+import { useStats } from "@/components/Admin/Dashboard/hooks/useStats";
 import RecentActivity from "@/components/Admin/Dashboard/RecentActivity";
 import UserGrowthChart from "@/components/Admin/Dashboard/UserGrowthChart";
 import ConfigModal from "@/components/Admin/Config/ConfigModal";
@@ -10,7 +10,7 @@ import { MainPageContext } from "@/components/Admin/MainPageContext"; // Actuali
 
 const DashboardSection: React.FC = () => {
   // Obtener estadísticas reales desde el hook
-  const { stats, loading, error } = useStats();
+  const { stats, isLoading, error } = useStats();
 
   // Obtenemos la función openAddModal del contexto de recompensas
   const { openAddModal } = useContext(RewardsContext);
@@ -76,10 +76,10 @@ const DashboardSection: React.FC = () => {
       {/* Sección de estadísticas */}
       {error ? (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-          <p>Error al cargar estadísticas: {error}</p>
+          <p>Error al cargar estadísticas: {error?.message || 'Error desconocido'}</p>
         </div>
       ) : (
-        <StatsGroup stats={displayStats} loading={loading} />
+        <StatsGroup stats={displayStats} loading={isLoading} />
       )}
 
       {/* Sección de gráficas y actividad reciente */}

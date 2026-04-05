@@ -57,14 +57,23 @@ export default async function executeQuery({
  * @returns Resultados de todas las consultas
  */
 export async function executeTransaction(queries: Array<{ query: string; values?: any[] }>) {
-  const connection = await db.getConnection();
+  // Importar mysql2 dinámicamente para transacciones
+  const mysql = await import('mysql2/promise');
+  
+  const connection = await mysql.createPool({
+    host: process.env.MYSQL_HOST || '127.0.0.1',
+    port: parseInt(process.env.MYSQL_PORT || '3306'),
+    database: process.env.MYSQL_DATABASE || 'Club ViveVerde',
+    user: process.env.MYSQL_USER || 'root',
+    password: process.env.MYSQL_PASSWORD || '',
+  }).getConnection();
   
   try {
     await connection.beginTransaction();
     
     const results = [];
     for (const { query, values } of queries) {
-      const result = await connection.query(query, values);
+      const [result] = await connection.query(query, values);
       results.push(result);
     }
     

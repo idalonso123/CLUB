@@ -163,11 +163,10 @@ export function getClientInfo(request: NextRequest): {
   const ip = 
     request.headers.get('x-forwarded-for')?.split(',')[0] ||
     request.headers.get('x-real-ip') ||
-    request.ip ||
     'unknown';
     
   const userAgent = request.headers.get('user-agent');
-  const country = request.geo?.country;
+  const country = request.headers.get('cf-ipcountry') || undefined; // Cloudflare header
   
   return {
     ip: ip.trim(),

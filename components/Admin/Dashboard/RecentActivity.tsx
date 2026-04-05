@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import useRecentActivity from './hooks/useRecentActivity';
+import { useRecentActivity } from './hooks/useRecentActivity';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import LoadingSpinner from '@/components/Common/LoadingSpinner';
@@ -11,7 +11,7 @@ interface RecentActivityProps {
 }
 
 const RecentActivity: React.FC<RecentActivityProps> = ({ limit = 5 }) => {
-  const { activities, loading, error, refresh } = useRecentActivity(limit);
+  const { activities, isLoading, error, refetch } = useRecentActivity({ limit });
   const router = useRouter();
 
   // Función simplificada para navegar a logs
@@ -181,9 +181,9 @@ const RecentActivity: React.FC<RecentActivityProps> = ({ limit = 5 }) => {
   if (error) {
     return (
       <div className="text-center py-6">
-        <p className="text-red-500">Error: {error}</p>
+        <p className="text-red-500">Error: {error?.message || 'Error desconocido'}</p>
         <button 
-          onClick={refresh}
+          onClick={refetch}
           className="mt-2 text-sm text-green-600 hover:text-green-800"
         >
           Intentar nuevamente
@@ -197,15 +197,15 @@ const RecentActivity: React.FC<RecentActivityProps> = ({ limit = 5 }) => {
       <div className="flex justify-between items-center mb-2">
         <h2 className="font-bold text-lg text-gray-800">Actividad reciente</h2>
         <button 
-          onClick={refresh} 
+          onClick={refetch} 
           className="text-xs text-green-600 hover:text-green-800"
-          disabled={loading}
+          disabled={isLoading}
         >
           <i className="fas fa-sync-alt mr-1"></i> Actualizar
         </button>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="flex justify-center py-1">
           <LoadingSpinner size="md" />
         </div>

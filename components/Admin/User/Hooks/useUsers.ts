@@ -109,6 +109,7 @@ const sortUsers = (users: User[], sortBy: string, sortOrder: string): User[] => 
 
 interface UserModalState {
   selectedUser: User | null;
+  isModalOpen: boolean;
   isEditModalOpen: boolean;
   isPointsModalOpen: boolean;
   isDeleteModalOpen: boolean;
@@ -140,6 +141,7 @@ const useUsers = () => {
   // Estado de modales
   const [modalState, setModalState] = useState<UserModalState>({
     selectedUser: null,
+    isModalOpen: false,
     isEditModalOpen: false,
     isPointsModalOpen: false,
     isDeleteModalOpen: false,

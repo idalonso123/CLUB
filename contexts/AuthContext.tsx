@@ -258,13 +258,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(data.user);
       
       // Redirigir según rol de usuario
-      const redirectPath = {
+      const roleRedirects: Record<string, string> = {
         'administrador': '/admin',
         'admin': '/admin',
         'cajero': '/teller',
         'teller': '/teller',
         'marketing': '/marketing'
-      }[data.user.role] || '/puntos-fidelidad';
+      };
+      const redirectPath = roleRedirects[data.user.role] || '/puntos-fidelidad';
       
       router.push(redirectPath);
       
