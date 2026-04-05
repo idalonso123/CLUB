@@ -39,17 +39,17 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
   // Límite estricto para login (prevenir fuerza bruta)
   login: {
     windowMs: 15 * 60 * 1000, // 15 minutos
-    maxRequests: 5            // 5 intentos por ventana
+    maxRequests: 10            // 10 intentos por ventana
   },
   // Límite para registro
   register: {
     windowMs: 60 * 60 * 1000, // 1 hora
-    maxRequests: 3            // 3 registros por hora
+    maxRequests: 5            // 5 registros por hora
   },
   // Límite para APIs generales
   api: {
     windowMs: 60 * 1000,      // 1 minuto
-    maxRequests: 100           // 100 solicitudes por minuto
+    maxRequests: 200           // 200 solicitudes por minuto
   },
   // Límite para envío de emails
   email: {
@@ -197,6 +197,12 @@ export function rateLimit(type: string = 'api') {
   const config = RATE_LIMITS[type] || RATE_LIMITS.api;
   
   return (req: NextApiRequest, res: NextApiResponse, next: () => void) => {
+    // Verificar si el rate limiting está deshabilitado via variable de entorno
+    // IMPORTANTE: Solo usar en desarrollo o entornos controlados, NUNCA en producción
+    if (process.env.DISABLE_RATE_LIMIT === 'true') {
+      return next();
+    }
+    
     const key = getClientKey(req, type);
     const info = updateRateLimitInfo(key, config.windowMs);
     
