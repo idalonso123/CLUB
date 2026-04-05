@@ -39,32 +39,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const user = users[0];
-    console.log('Usuario encontrado:', user);
-    console.log('Código del usuario:', user.codigo);
+    
+    // SECURITY: No registrar información del usuario en logs de producción
+    // console.log('Usuario encontrado:', user);
+    // console.log('Código del usuario:', user.codigo);
 
     // Generar token de restablecimiento
     const resetToken = crypto.randomBytes(32).toString('hex');
-    console.log('Token generado:', resetToken);
+    
+    // SECURITY: No registrar tokens en logs - esto es información sensible
+    // console.log('Token generado:', resetToken);
     
     // Formatear fecha para MySQL (YYYY-MM-DD HH:MM:SS)
     const tokenExpiry = new Date(Date.now() + 3600000); // 1 hora de expiración
     const tokenExpiryFormatted = tokenExpiry.toISOString().slice(0, 19).replace('T', ' ');
-    console.log('Fecha de expiración formateada:', tokenExpiryFormatted);
 
     // Convertir user_id a número entero
     const userId = parseInt(user.codigo, 10);
-    console.log('User ID (convertido):', userId);
 
     // Eliminar tokens anteriores del usuario
-    console.log('Intentando eliminar tokens anteriores...');
     try {
-      const deleteResult = await executeQuery({
+      await executeQuery({
         query: 'DELETE FROM password_reset_tokens WHERE user_id = ?',
         values: [userId]
       });
-      console.log('Resultado de DELETE:', deleteResult);
     } catch (deleteError) {
-      console.error('Error en DELETE:', deleteError);
+      console.error('Error al eliminar tokens anteriores:', deleteError);
       return res.status(500).json({ 
         success: false, 
         message: 'Error al eliminar tokens anteriores. Por favor, inténtalo más tarde.' 
@@ -72,20 +72,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Insertar nuevo token
-    // Usar DATE_ADD de MySQL para evitar problemas de zona horaria
-    console.log('Intentando insertar nuevo token...');
-    console.log('Valores a insertar:', { userId, resetToken });
     try {
-      const insertResult = await executeQuery({
+      await executeQuery({
         query: `
           INSERT INTO password_reset_tokens (user_id, token, expires_at, created_at) 
           VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 1 HOUR), NOW())
         `,
         values: [userId, resetToken]
       });
-      console.log('Resultado de INSERT:', insertResult);
     } catch (insertError) {
-      console.error('Error en INSERT:', insertError);
+      console.error('Error al guardar token de reseteo:', insertError);
       const errorMessage = insertError instanceof Error ? insertError.message : 'Error desconocido';
       return res.status(500).json({ 
         success: false, 

@@ -43,11 +43,21 @@ interface AuthContextType {
 
 /**
  * Claves de almacenamiento para sesión
+ * SECURITY: Solo almacenamos identificadores mínimos, nunca datos sensibles
  */
 const STORAGE_KEYS = {
-  USER: 'user',
-  SESSION: 'session'
+  SESSION_TOKEN: 'auth_token_session',
+  SESSION_DATA: 'session_data'
 } as const;
+
+/**
+ * Datos mínimos a almacenar en sesión (no incluyen información sensible)
+ */
+interface MinimalSessionData {
+  id: number;
+  role: string;
+  lastLogin: number;
+}
 
 /**
  * Contexto de autenticación
@@ -56,37 +66,72 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 /**
  * Función auxiliar para limpiar el almacenamiento de sesión
+ * SECURITY: Limpia todos los datos de sesión sensibles
  */
 function clearSessionStorage(): void {
   if (typeof window === 'undefined') return;
   
   try {
-    localStorage.removeItem(STORAGE_KEYS.USER);
-    sessionStorage.removeItem(STORAGE_KEYS.USER);
-    sessionStorage.removeItem(STORAGE_KEYS.SESSION);
+    // Limpiar todos los datos de sesión
+    Object.values(STORAGE_KEYS).forEach(key => {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    });
+    // Limpiar cualquier残留 de datos de usuario
+    localStorage.removeItem('user');
+    sessionStorage.removeItem('user');
+    localStorage.removeItem('session');
   } catch (error) {
     console.error('Error al limpiar almacenamiento:', error);
   }
 }
 
 /**
- * Función auxiliar para obtener el usuario almacenado
+ * Función auxiliar para obtener los datos mínimos de sesión
+ * SECURITY: Solo recupera datos mínimos necesarios, los datos completos
+ * se obtienen del servidor
  */
-function getStoredUser(): User | null {
+function getStoredSession(): MinimalSessionData | null {
   if (typeof window === 'undefined') return null;
   
   try {
-    const localUser = localStorage.getItem(STORAGE_KEYS.USER);
-    const sessionUser = sessionStorage.getItem(STORAGE_KEYS.USER);
-    const storedUser = localUser || sessionUser;
+    const localData = localStorage.getItem(STORAGE_KEYS.SESSION_DATA);
+    const sessionData = sessionStorage.getItem(STORAGE_KEYS.SESSION_DATA);
+    const storedData = localData || sessionData;
     
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser) as User;
-      return parsedUser.enabled !== false ? parsedUser : null;
+    if (storedData) {
+      const parsedData = JSON.parse(storedData) as MinimalSessionData;
+      // Verificar que los datos mínimos sean válidos
+      if (parsedData && parsedData.id && parsedData.role) {
+        return parsedData;
+      }
     }
   } catch (error) {
-    console.error('Error al obtener usuario almacenado:', error);
+    console.error('Error al obtener sesión almacenada:', error);
     clearSessionStorage();
+  }
+  return null;
+}
+
+/**
+ * Función para obtener el usuario desde el servidor
+ * SECURITY: Los datos completos del usuario se obtienen del servidor, no del cliente
+ */
+async function fetchUserFromServer(): Promise<User | null> {
+  try {
+    const response = await fetch('/api/user/profile', {
+      method: 'GET',
+      credentials: 'include' // Incluir cookies para autenticación
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.success && data.user) {
+        return data.user as User;
+      }
+    }
+  } catch (error) {
+    console.error('Error al obtener usuario del servidor:', error);
   }
   return null;
 }
@@ -94,6 +139,7 @@ function getStoredUser(): User | null {
 /**
  * Proveedor de autenticación
  * Gestiona el estado de sesión, login, logout y limpieza de eventos
+ * SECURITY: Implementa almacenamiento seguro de sesión con datos mínimos
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -111,13 +157,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticatedRef.current = !!user;
   }, [user]);
 
-  // Efecto para cargar usuario inicial desde storage
+  // Efecto para cargar usuario inicial desde sesión segura
   useEffect(() => {
-    const storedUser = getStoredUser();
-    if (storedUser) {
-      setUser(storedUser);
-    }
-    setLoading(false);
+    const loadUser = async () => {
+      const storedSession = getStoredSession();
+      
+      if (storedSession) {
+        // SECURITY: Obtener datos completos del usuario desde el servidor
+        // para garantizar que los datos no han sido manipulados localmente
+        const serverUser = await fetchUserFromServer();
+        if (serverUser) {
+          setUser(serverUser);
+        } else {
+          // Si no se puede obtener del servidor, la sesión es inválida
+          clearSessionStorage();
+        }
+      }
+      setLoading(false);
+    };
+    
+    loadUser();
   }, []);
 
   // Función de logout optimizada con useCallback
@@ -248,11 +307,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
       
-      // Guardar usuario según preferencia
+      // SECURITY: Almacenar solo datos mínimos de sesión, nunca datos sensibles completos
+      const minimalSessionData: MinimalSessionData = {
+        id: data.user.id,
+        role: data.user.role,
+        lastLogin: Date.now()
+      };
+      
       if (remember) {
-        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user));
+        localStorage.setItem(STORAGE_KEYS.SESSION_DATA, JSON.stringify(minimalSessionData));
       } else {
-        sessionStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user));
+        sessionStorage.setItem(STORAGE_KEYS.SESSION_DATA, JSON.stringify(minimalSessionData));
       }
       
       setUser(data.user);

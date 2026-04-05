@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { FiltersType } from '@/components/Admin/User/Service/userService';
 import { motion } from 'framer-motion';
 
@@ -56,7 +57,7 @@ const ExportData: React.FC<ExportDataProps> = ({ filters, searchTerm, onClose })
     } catch (error) {
       console.error('Error al exportar a CSV:', error);
       setIsLoading({...isLoading, csv: false});
-      alert('Error al exportar. Inténtalo de nuevo.');
+      toast.error('Error al exportar a CSV. Inténtalo de nuevo.');
     }
   };
 
@@ -76,7 +77,7 @@ const ExportData: React.FC<ExportDataProps> = ({ filters, searchTerm, onClose })
     } catch (error) {
       console.error('Error al exportar a Excel:', error);
       setIsLoading({...isLoading, excel: false});
-      alert('Error al exportar. Inténtalo de nuevo.');
+      toast.error('Error al exportar a Excel. Inténtalo de nuevo.');
     }
   };
 
@@ -96,7 +97,7 @@ const ExportData: React.FC<ExportDataProps> = ({ filters, searchTerm, onClose })
     } catch (error) {
       console.error('Error al exportar a PDF:', error);
       setIsLoading({...isLoading, pdf: false});
-      alert('Error al exportar. Inténtalo de nuevo.');
+      toast.error('Error al exportar a PDF. Inténtalo de nuevo.');
     }
   };
 

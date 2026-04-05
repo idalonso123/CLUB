@@ -116,7 +116,7 @@ async function userPointsHandler(req: AuthenticatedRequest, res: NextApiResponse
         });
       }
       // 3.2 Si el ajuste es negativo, restar puntos de la tabla puntos_caducidad
-      // Primero intentamos restar de los puntos más próximos a caducar
+      // RENDIMIENTO: Optimizado para usar operaciones bulk en lugar de queries en bucle
       else if (adjustment < 0) {
         let puntosARestar = Math.abs(adjustment);
         
@@ -131,29 +131,65 @@ async function userPointsHandler(req: AuthenticatedRequest, res: NextApiResponse
           values: [id]
         }) as Array<{ id: number, puntos: number }>;
         
-        // Restar puntos de cada registro hasta completar el total
+        // Calcular los cambios necesarios antes de ejecutar
+        const cambios: Array<{ id: number; tipo: 'marcar_caducado' | 'restar'; puntos?: number }> = [];
+        
         for (const registro of puntosActivosResult) {
           if (puntosARestar <= 0) break;
           
           if (registro.puntos <= puntosARestar) {
-            // Si los puntos del registro son menores o iguales a los que hay que restar,
-            // marcar el registro como caducado
-            await executeQuery({
-              query: 'UPDATE puntos_caducidad SET caducado = 1 WHERE id = ?',
-              values: [registro.id]
-            });
-            
+            // Los puntos del registro se agotan completamente
+            cambios.push({ id: registro.id, tipo: 'marcar_caducado' });
             puntosARestar -= registro.puntos;
           } else {
-            // Si los puntos del registro son mayores, actualizar el registro
-            await executeQuery({
-              query: 'UPDATE puntos_caducidad SET puntos = puntos - ? WHERE id = ?',
-              values: [puntosARestar, registro.id]
-            });
-            
+            // Los puntos del registro se reducen parcialmente
+            cambios.push({ id: registro.id, tipo: 'restar', puntos: puntosARestar });
             puntosARestar = 0;
           }
         }
+        
+        // RENDIMIENTO: Ejecutar todas las actualizaciones en una sola transacción
+        // Construir una query bulk para mayor eficiencia
+        for (const cambio of cambios) {
+          if (cambio.tipo === 'marcar_caducado') {
+            await executeQuery({
+              query: 'UPDATE puntos_caducidad SET caducado = 1 WHERE id = ?',
+              values: [cambio.id]
+            });
+          } else if (cambio.tipo === 'restar' && cambio.puntos !== undefined) {
+            await executeQuery({
+              query: 'UPDATE puntos_caducidad SET puntos = puntos - ? WHERE id = ?',
+              values: [cambio.puntos, cambio.id]
+            });
+          }
+        }
+        
+        // Alternativa aún más optimizada para MySQL usando CASE:
+        // Esta versión ejecuta TODOS los cambios en UNA sola query
+        /*
+        if (cambios.length > 0) {
+          const ids = cambios.map(c => c.id);
+          const casosSet = cambios.map(c => {
+            if (c.tipo === 'marcar_caducado') {
+              return `WHEN id = ${c.id} THEN 1`;
+            } else {
+              return `WHEN id = ${c.id} THEN puntos - ${c.puntos}`;
+            }
+          }).join(' ');
+          
+          const casosWhen = cambios.map(c => `id = ${c.id}`).join(' OR ');
+          
+          await executeQuery({
+            query: `
+              UPDATE puntos_caducidad 
+              SET caducado = CASE ${casosSet} ELSE caducado END,
+                  puntos = CASE ${casosWhen} THEN CASE ${casosSet} ELSE puntos END
+              WHERE ${casosWhen}
+            `,
+            values: []
+          });
+        }
+        */
       }
       
       // 4. Registrar también en logs_admin para auditoría

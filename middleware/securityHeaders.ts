@@ -1,6 +1,7 @@
 /**
  * Security Headers Middleware
  * Añade headers de seguridad a todas las respuestas
+ * SECURITY: Configuración estricta de CSP sin directivas unsafe
  */
 
 import { NextResponse } from 'next/server';
@@ -8,6 +9,7 @@ import type { NextRequest } from 'next/server';
 
 /**
  * Headers de seguridad a aplicar
+ * SECURITY: Content Security Policy reforzada sin 'unsafe-eval' ni 'unsafe-inline'
  */
 const securityHeaders = {
   // Previene que el sitio se muestre en iframes (previene clickjacking)
@@ -25,16 +27,21 @@ const securityHeaders = {
   // XSS Protection (para navegadores antiguos)
   'X-XSS-Protection': '1; mode=block',
   
-  // Content Security Policy
+  // Content Security Policy estricta
+  // SECURITY: Eliminadas directivas 'unsafe-eval' y 'unsafe-inline'
+  // Si necesitas scripts inline, usa nonces o hashes en su lugar
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "script-src 'self' https://www.googletagmanager.com https://www.google-analytics.com",
+    "style-src 'self' 'nonce-{NONCE}' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https:",
     "media-src 'self'",
     "connect-src 'self' https://www.google-analytics.com",
     "frame-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
   ].join('; '),
 };
 

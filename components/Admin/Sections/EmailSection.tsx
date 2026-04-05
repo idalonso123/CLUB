@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { WarningIcon } from '@/components/Common/Icons/AppIcons';
 import WysiwygEditor, { AVAILABLE_VARIABLES } from '../Common/WysiwygEditor';
 
 // Función para sanitizar entrada de fecha y prevenir años de más de 4 dígitos
@@ -529,8 +530,9 @@ const EmailSection: React.FC = () => {
   const handleSaveSegment = async () => {
     // Validación: el nombre es obligatorio
     if (!segmentForm.name || segmentForm.name.trim() === '') {
-      toast.error('⚠️ El nombre del segmento es obligatorio. Por favor, introduce un nombre para guardar el segmento.', {
+      toast.error('El nombre del segmento es obligatorio. Por favor, introduce un nombre para guardar el segmento.', {
         duration: 5000,
+        icon: <WarningIcon size="md" />,
         style: {
           background: '#FEF2F2',
           color: '#991B1B',

@@ -68,69 +68,43 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const users = result as any[];
     
     if (users.length === 0) {
-      // Registrar intento de inicio fallido (usuario no existe)
+      // SECURITY: No revelar si el email existe o no en el sistema
+      // Registrar intento de inicio fallido (usuario no existe) internamente
       try {
         await logFailedLogin(null, email, req.headers['user-agent'] as string, req.socket.remoteAddress || '');
       } catch (logError) {
         console.error('Error registrando intento de login fallido:', logError);
       }
       
+      // Devolver mensaje genérico que no revela información
       return res.status(401).json({
         success: false,
-        message: 'Credenciales inválidas'
+        message: 'Credenciales inválidas o cuenta no verificada'
       });
     }
     
     const user = users[0];
     
-    // IMPORTANTE: Verificar primero si el email ha sido verificado
-    // Esto es necesario porque cuando un usuario se registra pero no verifica,
-    // tanto status como email_verified pueden ser 0
-    if (!user.email_verified) {
-      // Registrar intento de inicio fallido (email no verificado)
-      try {
-        await logFailedLogin(user.codigo, email, req.headers['user-agent'] as string, req.socket.remoteAddress || '', 'Email no verificado');
-      } catch (logError) {
-        console.error('Error registrando intento de login fallido (email no verificado):', logError);
-      }
-      
-      return res.status(403).json({
-        success: false,
-        message: 'Por favor verifica tu email antes de iniciar sesión. Revisa tu bandeja de entrada.',
-        emailNotVerified: true
-      });
-    }
-    
-    // Verificar si la cuenta está habilitada (solo si el email ya está verificado)
-    if (user.status !== 1) {
-      // Registrar intento de inicio fallido (cuenta desactivada)
-      try {
-        await logFailedLogin(user.codigo, email, req.headers['user-agent'] as string, req.socket.remoteAddress || '', 'Cuenta desactivada');
-      } catch (logError) {
-        console.error('Error registrando intento de login fallido (cuenta desactivada):', logError);
-      }
-      
-      return res.status(403).json({
-        success: false,
-        message: 'La cuenta se encuentra desactivada. Póngase en contacto con nuestro equipo.',
-        accountDisabled: true
-      });
-    }
-    
-    // Verificar la contraseña
+    // Verificar la contraseña primero para evitar timing attacks
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
     
-    if (!isValidPassword) {
-      // Registrar intento de inicio fallido (contraseña incorrecta)
+    // Aunque la contraseña sea incorrecta, verificar email y status
+    // para mantener un tiempo de respuesta consistente y evitar información
+    if (!isValidPassword || !user.email_verified || user.status !== 1) {
+      // Registrar intento de inicio fallido con razón genérica
+      const reason = !isValidPassword ? 'Credenciales inválidas' : 
+                     !user.email_verified ? 'Email no verificado' : 'Cuenta desactivada';
+      
       try {
-        await logFailedLogin(user.codigo, email, req.headers['user-agent'] as string, req.socket.remoteAddress || '', 'Contraseña incorrecta');
+        await logFailedLogin(user.codigo, email, req.headers['user-agent'] as string, req.socket.remoteAddress || '', reason);
       } catch (logError) {
-        console.error('Error registrando intento de login fallido (contraseña incorrecta):', logError);
+        console.error('Error registrando intento de login fallido:', logError);
       }
       
+      // SECURITY: Mensaje genérico que no revela el estado real de la cuenta
       return res.status(401).json({
         success: false,
-        message: 'Credenciales inválidas'
+        message: 'Credenciales inválidas o cuenta no verificada'
       });
     }
     

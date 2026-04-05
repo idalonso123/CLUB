@@ -1,6 +1,25 @@
 /**
  * Middleware de Rate Limiting para APIs
  * Protege contra ataques de fuerza bruta y sobrecarga
+ * 
+ * IMPORTANTE: Esta implementación es para desarrollo y producción con una sola instancia.
+ * Para producción con múltiples instancias, usar Redis como store compartido:
+ * 
+ * @example
+ * // Instalación de Redis:
+ * npm install ioredis
+ * 
+ * // Configuración de producción:
+ * import Redis from 'ioredis';
+ * const redis = new Redis(process.env.REDIS_URL);
+ * 
+ * // En rate limiting, reemplazar Map con:
+ * // const RATE_LIMIT_KEY_PREFIX = 'rate_limit:';
+ * // const redisStore = {
+ * //   async get(key: string): Promise<RateLimitInfo | null> { ... },
+ * //   async set(key: string, info: RateLimitInfo): Promise<void> { ... },
+ * //   async delete(key: string): Promise<void> { ... }
+ * // };
  */
 
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -49,21 +68,80 @@ interface RateLimitInfo {
 
 /**
  * Almacenamiento en memoria para rate limits
- * En producción, usar Redis o similar
+ * 
+ * ADVERTENCIA: Esta implementación tiene limitaciones en producción:
+ * - No funciona con múltiples instancias del servidor
+ * - Se reinicia con cada despliegue
+ * - Puede haber memory leaks con muchas IPs diferentes
+ * 
+ * Para producción, usar Redis o similar.
  */
 const rateLimitStore = new Map<string, RateLimitInfo>();
 
+// Limpiar entradas antiguas del store periódicamente para prevenir memory leaks
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutos
+const MAX_STORE_SIZE = 100000; // Máximo de entradas antes de forzar limpieza
+
+let cleanupInterval: NodeJS.Timeout | null = null;
+
 /**
- * Limpia entradas antiguas del store cada 5 minutos
+ * Inicializa el cleanup interval
  */
-setInterval(() => {
+function initCleanup(): void {
+  if (cleanupInterval) return;
+  
+  cleanupInterval = setInterval(() => {
+    const now = Date.now();
+    let deletedCount = 0;
+    
+    for (const [key, info] of rateLimitStore.entries()) {
+      if (info.resetTime < now) {
+        rateLimitStore.delete(key);
+        deletedCount++;
+      }
+    }
+    
+    // Si el store es muy grande, limpiar más agresivamente
+    if (rateLimitStore.size > MAX_STORE_SIZE) {
+      const entries = Array.from(rateLimitStore.entries());
+      entries.sort((a, b) => a[1].resetTime - b[1].resetTime);
+      
+      // Eliminar las entradas más antiguas hasta dejar el 50%
+      const toDelete = entries.slice(0, Math.floor(entries.length * 0.5));
+      for (const [key] of toDelete) {
+        rateLimitStore.delete(key);
+      }
+      
+      console.warn(`Rate limit store exceeded max size. Cleaned ${toDelete.length} old entries.`);
+    }
+    
+    if (deletedCount > 0) {
+      console.log(`Rate limit cleanup: removed ${deletedCount} expired entries`);
+    }
+  }, CLEANUP_INTERVAL_MS);
+}
+
+// Iniciar cleanup
+initCleanup();
+
+/**
+ * Obtiene estadísticas del store (útil para debugging/monitoring)
+ */
+export function getRateLimitStoreStats(): { size: number; oldestEntry: number | null } {
   const now = Date.now();
-  for (const [key, info] of rateLimitStore.entries()) {
-    if (info.resetTime < now) {
-      rateLimitStore.delete(key);
+  let oldestEntry: number | null = null;
+  
+  for (const info of rateLimitStore.values()) {
+    if (!oldestEntry || info.resetTime < oldestEntry) {
+      oldestEntry = info.resetTime;
     }
   }
-}, 5 * 60 * 1000);
+  
+  return {
+    size: rateLimitStore.size,
+    oldestEntry
+  };
+}
 
 /**
  * Genera clave única para el cliente

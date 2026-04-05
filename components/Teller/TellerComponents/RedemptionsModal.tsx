@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import toast from "react-hot-toast";
 import { Redemption, RedemptionsModalProps } from "@/types/teller";
 import BarcodeModal from "./BarcodeModal";
 
@@ -99,13 +100,15 @@ const RedemptionsModal: React.FC<RedemptionsModalExtendedProps> = ({
         throw new Error(errorData.message || "Error al revertir la recompensa");
       }
 
-      alert("Recompensa revertida con éxito");
+      // Mostrar toast de éxito
+      toast.success("Recompensa revertida con éxito");
     } catch (error) {
       console.error("Error:", error);
       const errorMessage = typeof error === 'object' && error !== null && 'message' in error
         ? (error as Error).message
         : "Error al revertir la recompensa";
-      alert(errorMessage);
+      // Mostrar toast de error
+      toast.error(errorMessage);
     }
   };
 

@@ -32,11 +32,24 @@ export interface Role {
 }
 
 // Roles disponibles para los usuarios
+// IMPORTANTE: Mantener sincronizado con los roles definidos en la base de datos
 export const availableRoles: Role[] = [
   { value: '', label: 'Todos los roles' },
   { value: 'administrador', label: 'Administrador' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'cajero', label: 'Cajero' },
+  { value: 'marketing', label: 'Marketing' },
   { value: 'usuario', label: 'Usuario' }
 ];
+
+// Roles de administrador (tienen permisos elevados)
+export const ADMIN_ROLES = ['administrador', 'admin'];
+
+// Roles que pueden acceder al panel de cajero
+export const TELLER_ROLES = ['administrador', 'admin', 'cajero'];
+
+// Roles que pueden acceder al panel de marketing
+export const MARKETING_ROLES = ['administrador', 'admin', 'marketing'];
 
 // Funciones para interactuar con la API
 export const fetchUsers = async (searchParams: URLSearchParams = new URLSearchParams()): Promise<User[]> => {

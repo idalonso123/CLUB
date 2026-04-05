@@ -3,6 +3,12 @@ import executeQuery from '@/lib/db';
 import { withAuth, AuthenticatedRequest } from '@/middleware/authMiddleware';
 import { getExpirationConfig } from '@/lib/configHelpers';
 
+/**
+ * RENDIMIENTO: Endpoint optimizado para añadir sellos a carnets de mascotas
+ * - Evita queries redundantes usando los datos del primer SELECT
+ * - Calcula fechas directamente sin necesidad de reconsulta
+ */
+
 async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   try {
     const userRole = await req.user?.getRole();
@@ -19,26 +25,34 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
     if (!id || isNaN(Number(id))) {
       return res.status(400).json({ success: false, message: 'ID de carnet inválido' });
     }
+    
+    // Obtener configuración de caducidad una sola vez
+    const expirationConfig = await getExpirationConfig();
+    const sellosRequeridos = expirationConfig.sellos_requeridos_carnet || 6;
+
+    // RENDIMIENTO: Una sola consulta SELECT para obtener el estado actual
     const petCards = await executeQuery({
       query: `SELECT * FROM pet_cards WHERE id = ?`,
       values: [Number(id)]
     });
+    
     if (!petCards || (petCards as any[]).length === 0) {
       return res.status(404).json({ success: false, message: 'Carnet animal no encontrado' });
     }
+    
     const petCard = (petCards as any[])[0];
+    
+    // Validaciones usando los datos ya obtenidos
     if (petCard.completed) {
       return res.status(400).json({ success: false, message: 'Este carnet ya está completado' });
     }
-    // Obtener configuración de caducidad
-    const expirationConfig = await getExpirationConfig();
-    const sellosRequeridos = expirationConfig.sellos_requeridos_carnet || 6;
 
     if (petCard.stamps >= sellosRequeridos) {
       return res.status(400).json({ success: false, message: `Este carnet ya tiene ${sellosRequeridos} sellos` });
     }
-    // Asegurar que stampDates sea siempre un array válido
-    let stampDates = [];
+    
+    // Procesar stamp_dates usando los datos ya obtenidos
+    let stampDates: string[] = [];
     try {
       if (petCard.stamp_dates) {
         if (typeof petCard.stamp_dates === 'string') {
@@ -52,19 +66,28 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       stampDates = [];
     }
     
-    // Validar que stampDates sea un array
     if (!Array.isArray(stampDates)) {
       console.warn('stamp_dates no es un array, inicializando como array vacío');
       stampDates = [];
     }
+    
     const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
     stampDates.push(now);
     
-    // Calcular nueva fecha de caducidad por inactividad usando configuración dinámica
+    // Calcular fechas usando la configuración obtenida (sin consultas adicionales)
     const expirationDate = new Date();
     expirationDate.setMonth(expirationDate.getMonth() + expirationConfig.caducidad_carnet_inactividad_meses);
     const expirationDateFormatted = expirationDate.toISOString().slice(0, 19).replace('T', ' ');
     
+    // Calcular maxExpirationDate usando la fecha de creación ya obtenida
+    let maxExpirationDate: string | null = null;
+    if (petCard.createdAt) {
+      const createdDate = new Date(petCard.createdAt);
+      createdDate.setMonth(createdDate.getMonth() + expirationConfig.caducidad_carnet_antiguedad_meses);
+      maxExpirationDate = createdDate.toISOString().slice(0, 19).replace('T', ' ');
+    }
+    
+    // Actualizar el carnet
     await executeQuery({
       query: `
         UPDATE pet_cards 
@@ -73,39 +96,19 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
       `,
       values: [JSON.stringify(stampDates), now, expirationDateFormatted, Number(id)]
     });
-    const updatedPetCardsResult = await executeQuery({
-      query: `SELECT * FROM pet_cards WHERE id = ?`,
-      values: [Number(id)]
-    });
-    const rawPetCard = (updatedPetCardsResult as any[])[0];
-    let parsedStampDates: string[] = [];
-    try {
-      if (rawPetCard.stamp_dates) {
-        if (typeof rawPetCard.stamp_dates === 'string') {
-          parsedStampDates = JSON.parse(rawPetCard.stamp_dates);
-        } 
-        else if (Array.isArray(rawPetCard.stamp_dates)) {
-          parsedStampDates = rawPetCard.stamp_dates;
-        }
-      }
-    } catch (e) {
-      console.error('Error parseando stamp_dates:', e);
-      parsedStampDates = [];
-    }
     
-    // Calcular maxExpirationDate (antigüedad máxima desde creación) usando configuración dinámica
-    let maxExpirationDate = null;
-    if (rawPetCard.createdAt) {
-      const createdDate = new Date(rawPetCard.createdAt);
-      createdDate.setMonth(createdDate.getMonth() + expirationConfig.caducidad_carnet_antiguedad_meses);
-      maxExpirationDate = createdDate.toISOString().slice(0, 19).replace('T', ' ');
-    }
-    
+    // RENDIMIENTO: Construir la respuesta directamente usando los datos modificados
+    // Ya no necesitamos hacer otra consulta SELECT
     const transformedPetCard = {
-      ...rawPetCard,
-      stampDates: parsedStampDates,
+      ...petCard,
+      stamps: petCard.stamps + 1,
+      stampDates: stampDates,
+      updatedAt: now,
+      expirationDate: expirationDateFormatted,
+      isExpired: false,
       maxExpirationDate: maxExpirationDate
     };
+    
     return res.status(200).json({
       success: true,
       message: 'Sello añadido correctamente',

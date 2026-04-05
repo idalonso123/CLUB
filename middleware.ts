@@ -39,13 +39,31 @@ export async function middleware(request: NextRequest) {
     loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
   }
   
-  // Verificar JWT_SECRET
+  // Verificar JWT_SECRET - CRÍTICO PARA PRODUCCIÓN
   const JWT_SECRET = process.env.JWT_SECRET;
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  // En producción, JWT_SECRET es absolutamente requerido
   if (!JWT_SECRET) {
-    console.warn('JWT_SECRET no está configurado. Usando valor por defecto (NO RECOMENDADO para producción).');
+    if (isProduction) {
+      console.error('ERROR CRÍTICO: JWT_SECRET no está configurado. La aplicación no puede funcionar en producción sin esta variable.');
+      return new NextResponse(
+        JSON.stringify({ 
+          error: 'Error de configuración del servidor',
+          message: 'El servidor no está configurado correctamente. Contacta con el administrador.'
+        }),
+        { 
+          status: 500, 
+          headers: { 'Content-Type': 'application/json' } 
+        }
+      );
+    } else {
+      console.warn('ADVERTENCIA: JWT_SECRET no está configurado en desarrollo. Usando valor de fallback (NO SEGURO PARA PRODUCCIÓN).');
+    }
   }
   
-  const secretKey = new TextEncoder().encode(JWT_SECRET || 'club-viveverde-secret-key');
+  // Usar un valor de fallback solo en desarrollo, nunca en producción
+  const secretKey = new TextEncoder().encode(JWT_SECRET || 'DEVELOPMENT_ONLY_KEY_DO_NOT_USE_IN_PROD_' + Date.now());
   
   if (token && isAuthPage) {
     try {

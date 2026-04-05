@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from "framer-motion";
+import toast from 'react-hot-toast';
+import { SmartphoneIcon, TabletIcon, DesktopIcon, SuccessIcon, ErrorIcon } from '@/components/Common/Icons/AppIcons';
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -54,7 +56,7 @@ const InstallPWA = () => {
     const isAndroid = /Android/.test(navigator.userAgent);
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     if (isStandalone) {
-      alert('¡La aplicación ya está instalada!');
+      toast.success('La aplicación ya está instalada');
       return;
     }
     if (installPrompt) {
@@ -63,20 +65,31 @@ const InstallPWA = () => {
         const choiceResult = await installPrompt.userChoice;
         if (choiceResult.outcome === 'accepted') {
           console.log('Usuario aceptó la instalación');
+          toast.success('Aplicación instalada correctamente');
         } else {
-          console.log('Usuario rechazó la instalación');
+          console.log('Usuario rechaz ó la instalación');
         }
       } catch (error) {
         console.error('Error al intentar instalar la PWA:', error);
+        toast.error('Error al intentar instalar la aplicación');
       }
       return;
     }
     if (isIOS) {
-      alert('Para instalar esta aplicación en tu iPhone:\n\n1. Toca el icono de compartir.\n2. Selecciona "Añadir a pantalla de inicio".\n3. Pulsa el botón de "Añadir".');
+      toast('Para instalar en tu iPhone: toca el icono de compartir y selecciona "Añadir a pantalla de inicio"', {
+        duration: 5000,
+        icon: <SmartphoneIcon size="sm" />
+      });
     } else if (isAndroid) {
-      alert('Para instalar esta aplicación en Android:\n\n1. Abre el menú de opciones.\n2. Selecciona "Instalar aplicación" o "Añadir a pantalla de inicio".');
+      toast('Para instalar en Android: abre el menú y selecciona "Instalar aplicación"', {
+        duration: 5000,
+        icon: <TabletIcon size="sm" />
+      });
     } else {
-      alert('Para instalar esta aplicación en tu PC:\n\n1. Busca el icono de instalación en la barra de direcciones.\n2. O abre el menú de opciones de tu navegador.\n3. Selecciona "Instalar" o "Añadir a escritorio".');
+      toast('Para instalar en PC: busca el icono de instalación en la barra de direcciones', {
+        duration: 5000,
+        icon: <DesktopIcon size="sm" />
+      });
     }
   };
   return (
