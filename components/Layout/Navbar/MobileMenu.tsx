@@ -37,6 +37,16 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   // Detectar si estamos en la página de soporte
   const isOnSupportPage = router.pathname.startsWith("/soporte");
 
+  // Detectar si estamos específicamente en /admin/dashboard (Panel Principal)
+  const isOnAdminDashboard = router.pathname === "/admin/dashboard";
+
+  // Detectar si estamos en cualquier otra página del Panel Administrativo (NO es dashboard)
+  // Incluye: /admin/users, /admin/rewards, /admin/mainpage, /admin/logs, /admin/analytics, /admin/backup
+  const isOnOtherAdminPage = router.pathname.startsWith("/admin") && !isOnAdminDashboard;
+
+  // Estado para rastrear si el menú ya ha mostrado el submenú en esta apertura
+  const [hasShownSubmenu, setHasShownSubmenu] = useState(false);
+
   // Obtener la página anterior guardada cuando venimos de soporte
   const getPreviousPage = () => {
     if (typeof window !== 'undefined') {
@@ -45,11 +55,12 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     return '/';
   };
 
-  // Al montar el componente, restaurar el estado del sidebar desde sessionStorage
+  // Al montar el componente, restaurar el estado desde sessionStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedAdminMenu = sessionStorage.getItem('mobileMenuIsInAdminMenu');
       const savedMarketingMenu = sessionStorage.getItem('mobileMenuIsInMarketingMenu');
+      const cameFromAdminButton = sessionStorage.getItem('cameFromAdminButton');
       
       if (savedAdminMenu === 'true') {
         setIsInAdminMenu(true);
@@ -57,41 +68,85 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
       if (savedMarketingMenu === 'true') {
         setIsInMarketingMenu(true);
       }
+      
+      // Si viene del botón "Panel Administrativo" en MobileMenu, mostrar SIDEBAR
+      // Esto aplica cuando acaba de navegar desde MobileMenu a una página del admin
+      if (cameFromAdminButton === 'true') {
+        setIsInAdminMenu(true);
+        setHasShownSubmenu(true);
+        // Limpiar el flag
+        sessionStorage.removeItem('cameFromAdminButton');
+      }
     }
   }, []); // Solo se ejecuta al montar el componente
+
+  // Cuando estamos en /admin/dashboard (Panel Principal), NO mostrar SIDEBAR
+  // Mostrar MobileMenu normal
+  useEffect(() => {
+    if (isOnAdminDashboard && isAdminOnly) {
+      setIsInAdminMenu(false);
+    }
+  }, [isOnAdminDashboard, isAdminOnly]);
+
+  // Cuando estamos en otra página del admin (NO dashboard), mostrar SIDEBAR
+  useEffect(() => {
+    if (isOnOtherAdminPage && isAdminOnly) {
+      setIsInAdminMenu(true);
+      setHasShownSubmenu(true);
+    }
+  }, [isOnOtherAdminPage, isAdminOnly]);
 
   // Cuando se abre el menú y estamos en la página de marketing, mostrar submenú de marketing
   useEffect(() => {
     if (isMenuOpen && isOnMarketingPage) {
-      // Siempre mostrar el menú de marketing cuando estamos en la página de marketing
       setIsInMarketingMenu(true);
+      setHasShownSubmenu(true);
     }
   }, [isMenuOpen, isOnMarketingPage]);
 
-  // Cuando se abre el menú y NO estamos en marketing ni soporte, resetear submenús
-  // para mostrar el menú principal completo con todas las opciones
-  // EXCEPTO para usuarios de marketing que deben mantener su submenú completo
+  // Cuando se abre el menú y NO estamos en marketing, soporte ni páginas del admin
+  // resetear submenús para mostrar el menú principal completo
   useEffect(() => {
-    if (isMenuOpen && !isOnMarketingPage && !isOnSupportPage) {
-      // Para usuarios de marketing, mantener el submenú completo de marketing
-      // incluso cuando están en otras páginas como Mi Perfil
-      if (!isMarketing) {
-        // Para usuarios NO marketing, resetear estados de submenú
-        setIsInMarketingMenu(false);
-        setIsInAdminMenu(false);
-        
-        // Limpiar sessionStorage para evitar estados inconsistentes
-        if (typeof window !== 'undefined') {
-          sessionStorage.removeItem('mobileMenuIsInAdminMenu');
-          sessionStorage.removeItem('mobileMenuIsInMarketingMenu');
+    if (isMenuOpen && !isOnMarketingPage && !isOnSupportPage && !router.pathname.startsWith("/admin")) {
+      if (!hasShownSubmenu) {
+        if (!isMarketing) {
+          setIsInMarketingMenu(false);
+          setIsInAdminMenu(false);
+          
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('mobileMenuIsInAdminMenu');
+            sessionStorage.removeItem('mobileMenuIsInMarketingMenu');
+            sessionStorage.removeItem('cameFromAdminButton');
+          }
+        } else {
+          setIsInMarketingMenu(true);
+          setIsInAdminMenu(false);
+          setHasShownSubmenu(true);
         }
-      } else {
-        // Para usuarios marketing, asegurar que se muestre el submenú completo
-        setIsInMarketingMenu(true);
-        setIsInAdminMenu(false);
       }
     }
-  }, [isMenuOpen, isOnMarketingPage, isOnSupportPage, isMarketing]);
+  }, [isMenuOpen, isOnMarketingPage, isOnSupportPage, isMarketing, hasShownSubmenu, router.pathname]);
+
+  // Cuando el usuario entra en el submenú de admin, marcar que ha mostrado un submenú
+  useEffect(() => {
+    if (isInAdminMenu) {
+      setHasShownSubmenu(true);
+    }
+  }, [isInAdminMenu]);
+
+  // Cuando el usuario entra en el submenú de marketing, marcar que ha mostrado un submenú
+  useEffect(() => {
+    if (isInMarketingMenu) {
+      setHasShownSubmenu(true);
+    }
+  }, [isInMarketingMenu]);
+
+  // Resetear el indicador cuando el menú se cierra completamente
+  useEffect(() => {
+    if (!isMenuOpen) {
+      setHasShownSubmenu(false);
+    }
+  }, [isMenuOpen]);
 
   // Guardar el estado del sidebar cuando cambia
   useEffect(() => {

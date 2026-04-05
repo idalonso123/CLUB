@@ -350,7 +350,17 @@ const NavLinks: React.FC<NavLinksProps> = ({
         <>
           <motion.div className="mb-1">
             <motion.button
-              onClick={() => handleLinkClick("/admin/dashboard")}
+              onClick={() => {
+                // Resetear el estado del admin para volver al menú principal
+                if (setIsInAdminMenu) {
+                  setIsInAdminMenu(false);
+                }
+                // Limpiar sessionStorage
+                if (typeof window !== 'undefined') {
+                  sessionStorage.removeItem('mobileMenuIsInAdminMenu');
+                }
+                handleLinkClick("/admin/dashboard");
+              }}
               className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 ${getLinkClass("/admin/dashboard")}`}
             >
               <i className="fas fa-tachometer-alt mr-3 w-5 text-center"></i>
@@ -384,7 +394,7 @@ const NavLinks: React.FC<NavLinksProps> = ({
               className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 ${getLinkClass("/admin/mainpage")}`}
             >
               <i className="fas fa-home mr-3 w-5 text-center"></i>
-              <span>Pagina Principal</span>
+              <span>Página Principal</span>
             </motion.button>
           </motion.div>
 
@@ -414,7 +424,7 @@ const NavLinks: React.FC<NavLinksProps> = ({
               className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 ${getLinkClass("/marketing")}`}
             >
               <i className="fas fa-envelope mr-3 w-5 text-center"></i>
-              <span>Sistema de Correos</span>
+              <span>Sistema de Correos (Marketing)</span>
             </motion.button>
           </motion.div>
 
@@ -559,13 +569,16 @@ const NavLinks: React.FC<NavLinksProps> = ({
         <motion.div className="mb-1">
           <motion.button
             onClick={() => {
-              // Abrir el submenú del panel administrativo
-              if (setIsInAdminMenu) {
-                setIsInAdminMenu(true);
+              // Guardar flag para indicar que vino del botón "Panel Administrativo"
+              if (typeof window !== 'undefined') {
+                sessionStorage.setItem('cameFromAdminButton', 'true');
               }
+              // Cerrar el menú móvil
               if (closeMenu) {
                 closeMenu();
               }
+              // Navegar al Panel Principal del admin
+              handleLinkClick("/admin/dashboard");
             }}
             className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 ${getLinkClass("/admin")}`}
           >
