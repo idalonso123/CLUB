@@ -106,11 +106,12 @@ const NavLinks: React.FC<NavLinksProps> = ({
 
     // Si está en el submenú de marketing (desde cualquier página, incluyendo Mi Perfil)
     // O si está en la página de marketing
-    if (isMarketing && (isInMarketingMenu || isOnMarketingPage)) {
+    // O si el admin está en la página de marketing (isAdminOnly && isOnMarketingPage)
+    if ((isMarketing && (isInMarketingMenu || isOnMarketingPage)) || (isAdminOnly && isOnMarketingPage)) {
       return (
         <>
           {/* Botón Volver a Administrador (solo cuando el admin accedió a marketing desde su menú) */}
-          {isAdminOnly && isOnMarketingPage && (
+          {(isAdminOnly && (isOnMarketingPage || isInMarketingMenu)) && (
             <motion.div className="mb-1">
               <Link
                 href="/admin/dashboard"
