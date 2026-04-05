@@ -34,12 +34,6 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   // Detectar si estamos en la página de marketing
   const isOnMarketingPage = router.pathname.startsWith("/marketing");
 
-  // Detectar si estamos en la página principal del admin (dashboard)
-  const isOnAdminDashboard = router.pathname === "/admin/dashboard";
-
-  // Detectar si estamos en pantallas específicas del panel administrativo (no el dashboard principal)
-  const isOnAdminSpecificPage = router.pathname.startsWith("/admin") && !isOnAdminDashboard;
-
   // Detectar si estamos en la página de soporte
   const isOnSupportPage = router.pathname.startsWith("/soporte");
 
@@ -50,10 +44,6 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     }
     return '/';
   };
-
-  // Determinar si el admin accedió a marketing desde su menú
-  // Esto sucede cuando isAdminOnly es true Y estamos en la página de marketing
-  const isAdminInMarketing = isAdminOnly && isOnMarketingPage;
 
   // Al montar el componente, restaurar el estado del sidebar desde sessionStorage
   useEffect(() => {
@@ -78,20 +68,11 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     }
   }, [isMenuOpen, isOnMarketingPage]);
 
-  // Cuando se abre el menú y estamos en una página específica del panel administrativo, mostrar submenú de admin
-  // NO mostrar el submenú si estamos en la página principal del admin (/admin/dashboard)
-  useEffect(() => {
-    if (isMenuOpen && isOnAdminSpecificPage && isAdminOnly) {
-      // Mostrar el submenú de admin solo cuando estamos en pantallas específicas de /admin/* (no dashboard)
-      setIsInAdminMenu(true);
-    }
-  }, [isMenuOpen, isOnAdminSpecificPage, isAdminOnly]);
-
-  // Cuando se abre el menú y NO estamos en marketing ni soporte ni admin específico, resetear submenús
+  // Cuando se abre el menú y NO estamos en marketing ni soporte, resetear submenús
   // para mostrar el menú principal completo con todas las opciones
   // EXCEPTO para usuarios de marketing que deben mantener su submenú completo
   useEffect(() => {
-    if (isMenuOpen && !isOnMarketingPage && !isOnSupportPage && !isOnAdminSpecificPage) {
+    if (isMenuOpen && !isOnMarketingPage && !isOnSupportPage) {
       // Para usuarios de marketing, mantener el submenú completo de marketing
       // incluso cuando están en otras páginas como Mi Perfil
       if (!isMarketing) {
@@ -110,7 +91,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
         setIsInAdminMenu(false);
       }
     }
-  }, [isMenuOpen, isOnMarketingPage, isOnSupportPage, isMarketing, isOnAdminSpecificPage]);
+  }, [isMenuOpen, isOnMarketingPage, isOnSupportPage, isMarketing]);
 
   // Guardar el estado del sidebar cuando cambia
   useEffect(() => {
@@ -165,8 +146,8 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   };
 
   // Determinar si mostrar el botón "Volver al Menú"
-  // Mostrar si estamos en el submenú de admin Y NO estamos en marketing ni en páginas de admin específicas
-  const showBackButton = isInAdminMenu && !isOnMarketingPage && !isOnAdminSpecificPage;
+  // Mostrar si estamos en el submenú de admin Y NO estamos en marketing ni en soporte
+  const showBackButton = isInAdminMenu && !isOnMarketingPage && !isOnSupportPage;
 
   // Determinar si mostrar el botón "Volver" para soporte
   const showSupportBackButton = isOnSupportPage;

@@ -12,6 +12,20 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [userRole, setUserRole] = useState<string>("");
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkIfMobile();
+    window.addEventListener('resize', checkIfMobile);
+
+    return () => {
+      window.removeEventListener('resize', checkIfMobile);
+    };
+  }, []);
 
   useEffect(() => {
     const checkAdminPermission = async () => {
@@ -79,7 +93,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <Sidebar userRole={userRole} />
+      {/* En desktop usar Sidebar, en móvil el Navbar principal maneja el menú móvil */}
+      {!isMobile && <Sidebar userRole={userRole} />}
 
       <motion.div
         className="flex-1 overflow-auto p-4 md:p-6"

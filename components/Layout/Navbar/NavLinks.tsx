@@ -559,9 +559,12 @@ const NavLinks: React.FC<NavLinksProps> = ({
         <motion.div className="mb-1">
           <motion.button
             onClick={() => {
-              // No cerrar el menú, cambiar al submenú administrativo
+              // Abrir el submenú del panel administrativo
               if (setIsInAdminMenu) {
                 setIsInAdminMenu(true);
+              }
+              if (closeMenu) {
+                closeMenu();
               }
             }}
             className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 ${getLinkClass("/admin")}`}
