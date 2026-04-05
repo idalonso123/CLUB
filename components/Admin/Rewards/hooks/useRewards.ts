@@ -1,6 +1,21 @@
-import { useState, useEffect } from 'react';
+/**
+ * Hook refactorizado para gestión de recompensas
+ * 
+ * Utiliza React Query para:
+ * - Caché automático de recompensas
+ * - Invalidación automática tras mutaciones
+ * - Estados de loading/error consistentes
+ * - Retry automático en caso de fallo
+ */
 
-interface Reward {
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
+
+// ============================================================================
+// TIPOS
+// ============================================================================
+
+export interface Reward {
   id: number;
   name: string;
   description: string | null;
@@ -21,47 +36,102 @@ interface Reward {
   updatedAt?: string;
 }
 
-interface ApiResponse {
+interface RewardsResponse {
+  success: boolean;
+  rewards: Reward[];
+  message?: string;
+}
+
+interface RewardResponse {
+  success: boolean;
+  reward?: Reward;
+  message?: string;
+  disabled?: boolean;
+}
+
+interface DeleteResponse {
   success: boolean;
   message?: string;
-  reward?: Reward;
   disabled?: boolean;
 }
 
 interface UseRewardsOptions {
-  autoFetch?: boolean; // Por defecto true para mantener compatibilidad
+  enabled?: boolean;
 }
 
-const useRewards = (autoFetch: boolean = true) => {
-  const [rewards, setRewards] = useState<Reward[]>([]);
-  const [loading, setLoading] = useState<boolean>(autoFetch);
-  const [error, setError] = useState<string | null>(null);
+// ============================================================================
+// CLAVES DE CACHÉ
+// ============================================================================
 
-  // Cargar todas las recompensas
-  const fetchRewards = async () => {
-    setLoading(true);
-    setError(null);
-    
-    try {
+export const REWARDS_QUERY_KEY = ['admin-rewards'];
+
+// ============================================================================
+// MUTATIONS
+// ============================================================================
+
+interface AddRewardInput {
+  name: string;
+  description?: string;
+  points: number;
+  imageUrl?: string;
+  available?: boolean;
+  category: string;
+  stock?: number;
+  canjeoMultiple?: boolean;
+  expiracionActiva?: boolean;
+  duracionMeses?: number;
+}
+
+interface UpdateRewardInput {
+  id: number;
+  data: Partial<Reward>;
+}
+
+// ============================================================================
+// HOOK PRINCIPAL: OBTENER RECOMPENSAS
+// ============================================================================
+
+/**
+ * Hook para obtener lista de recompensas
+ */
+export function useRewards(options: UseRewardsOptions = {}) {
+  const { enabled = true } = options;
+
+  return useQuery<RewardsResponse>({
+    queryKey: REWARDS_QUERY_KEY,
+    queryFn: async () => {
       const response = await fetch('/api/admin/rewards');
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+      
       const data = await response.json();
       
-      if (data.success) {
-        setRewards(data.rewards || []);
-      } else {
+      if (!data.success) {
         throw new Error(data.message || 'Error al cargar recompensas');
       }
-    } catch (err: any) {
-      console.error('Error al cargar recompensas:', err);
-      setError(err.message || 'No se pudieron cargar las recompensas');
-    } finally {
-      setLoading(false);
-    }
-  };
+      
+      return data;
+    },
+    enabled,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    retry: 3,
+  });
+}
 
-  // Añadir una nueva recompensa
-  const addReward = async (rewardData: Reward): Promise<ApiResponse> => {
-    try {
+// ============================================================================
+// HOOK: AÑADIR RECOMPENSA
+// ============================================================================
+
+/**
+ * Hook para añadir una nueva recompensa
+ */
+export function useAddReward() {
+  const queryClient = useQueryClient();
+
+  return useMutation<RewardResponse, Error, AddRewardInput>({
+    mutationFn: async (rewardData) => {
       const response = await fetch('/api/admin/rewards', {
         method: 'POST',
         headers: {
@@ -72,102 +142,200 @@ const useRewards = (autoFetch: boolean = true) => {
       
       const data = await response.json();
       
-      if (data.success && data.reward) {
-        setRewards(prev => [data.reward, ...prev]);
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Error al añadir recompensa');
       }
       
       return data;
-    } catch (err: any) {
-      console.error('Error al añadir recompensa:', err);
-      return { 
-        success: false, 
-        message: err.message || 'Error al añadir recompensa' 
-      };
-    }
-  };
+    },
+    onSuccess: (data) => {
+      // Invalidar caché para refrescar la lista
+      queryClient.invalidateQueries({ queryKey: REWARDS_QUERY_KEY });
+      toast.success('Recompensa añadida correctamente');
+    },
+    onError: (error) => {
+      toast.error(`Error: ${error.message}`);
+    },
+  });
+}
 
-  // Actualizar una recompensa existente
-  const updateReward = async (id: number, rewardData: Reward): Promise<ApiResponse> => {
-    try {
+// ============================================================================
+// HOOK: ACTUALIZAR RECOMPENSA
+// ============================================================================
+
+/**
+ * Hook para actualizar una recompensa existente
+ */
+export function useUpdateReward() {
+  const queryClient = useQueryClient();
+
+  return useMutation<RewardResponse, Error, UpdateRewardInput>({
+    mutationFn: async ({ id, data }) => {
       const response = await fetch(`/api/admin/rewards/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(rewardData),
+        body: JSON.stringify(data),
       });
       
-      const data = await response.json();
+      const result = await response.json();
       
-      if (data.success && data.reward) {
-        setRewards(prev => 
-          prev.map(reward => reward.id === id ? data.reward : reward)
-        );
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Error al actualizar recompensa');
       }
       
-      return data;
-    } catch (err: any) {
-      console.error('Error al actualizar recompensa:', err);
-      return { 
-        success: false, 
-        message: err.message || 'Error al actualizar recompensa' 
-      };
-    }
-  };
+      return result;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: REWARDS_QUERY_KEY });
+      toast.success('Recompensa actualizada correctamente');
+    },
+    onError: (error) => {
+      toast.error(`Error: ${error.message}`);
+    },
+  });
+}
 
-  // Eliminar una recompensa
-  const deleteReward = async (id: number, forceDelete: boolean = false): Promise<ApiResponse> => {
-    try {
+// ============================================================================
+// HOOK: ELIMINAR RECOMPENSA
+// ============================================================================
+
+/**
+ * Hook para eliminar una recompensa
+ */
+export function useDeleteReward() {
+  const queryClient = useQueryClient();
+
+  return useMutation<DeleteResponse, Error, { id: number; forceDelete?: boolean }>({
+    mutationFn: async ({ id, forceDelete = false }) => {
       const response = await fetch(`/api/admin/rewards/${id}?forceDelete=${forceDelete}`, {
         method: 'DELETE',
       });
       
       const data = await response.json();
       
-      if (data.success) {
-        if (data.disabled) {
-          // Si la recompensa fue desactivada en lugar de eliminada
-          setRewards(prev => 
-            prev.map(reward => {
-              // Obtener la recompensa actual para verificar si tiene stock ilimitado
-              const currentReward = prev.find(r => r.id === id);
-              // Si la recompensa tiene stock -1 (ilimitado), preservar ese valor
-              const newStock = currentReward && currentReward.stock === -1 ? -1 : 0;
-              return reward.id === id ? { ...reward, available: false, stock: newStock } : reward;
-            })
-          );
-        } else {
-          // Si la recompensa fue eliminada completamente
-          setRewards(prev => prev.filter(reward => reward.id !== id));
-        }
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Error al eliminar recompensa');
       }
       
       return data;
-    } catch (err: any) {
-      console.error('Error al eliminar recompensa:', err);
-      return { 
-        success: false, 
-        message: err.message || 'Error al eliminar recompensa' 
-      };
-    }
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: REWARDS_QUERY_KEY });
+      
+      if (data.disabled) {
+        toast.success('Recompensa desactivada correctamente');
+      } else {
+        toast.success('Recompensa eliminada correctamente');
+      }
+    },
+    onError: (error) => {
+      toast.error(`Error: ${error.message}`);
+    },
+  });
+}
+
+// ============================================================================
+// HOOK: CAMBIAR DISPONIBILIDAD
+// ============================================================================
+
+/**
+ * Hook para activar/desactivar una recompensa
+ */
+export function useToggleRewardAvailability() {
+  const queryClient = useQueryClient();
+
+  return useMutation<RewardResponse, Error, number>({
+    mutationFn: async (id) => {
+      const response = await fetch(`/api/admin/rewards/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Error al cambiar disponibilidad');
+      }
+      
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: REWARDS_QUERY_KEY });
+      toast.success(`Recompensa ${data.reward?.available ? 'activada' : 'desactivada'} correctamente`);
+    },
+    onError: (error) => {
+      toast.error(`Error: ${error.message}`);
+    },
+  });
+}
+
+// ============================================================================
+// HOOK: INVALIDAR CACHÉ
+// ============================================================================
+
+/**
+ * Hook para invalidar manualmente el caché de recompensas
+ */
+export function useInvalidateRewards() {
+  const queryClient = useQueryClient();
+
+  return () => {
+    queryClient.invalidateQueries({ queryKey: REWARDS_QUERY_KEY });
+  };
+}
+
+// ============================================================================
+// HOOK LEGACY (para compatibilidad)
+// ============================================================================
+
+/**
+ * Hook legacy que mantiene la misma API que el original
+ * pero usa React Query internamente
+ * 
+ * @deprecated Usar los hooks individuales (useRewards, useAddReward, etc.) 
+ * para mejor control y tipado
+ */
+export function useRewardsLegacy(autoFetch: boolean = true) {
+  const queryClient = useQueryClient();
+  
+  const { 
+    data, 
+    isLoading: loading, 
+    error,
+    refetch 
+  } = useRewards({ enabled: autoFetch });
+
+  const addRewardMutation = useAddReward();
+  const updateRewardMutation = useUpdateReward();
+  const deleteRewardMutation = useDeleteReward();
+
+  const fetchRewards = () => {
+    refetch();
   };
 
-  // Cargar recompensas al inicializar el hook solo si autoFetch es true
-  useEffect(() => {
-    if (autoFetch) {
-      fetchRewards();
-    }
-  }, [autoFetch]);
+  const addReward = async (rewardData: Omit<Reward, 'id'>) => {
+    return addRewardMutation.mutateAsync(rewardData as AddRewardInput);
+  };
+
+  const updateReward = async (id: number, rewardData: Partial<Reward>) => {
+    return updateRewardMutation.mutateAsync({ id, data: rewardData });
+  };
+
+  const deleteReward = async (id: number, forceDelete: boolean = false) => {
+    return deleteRewardMutation.mutateAsync({ id, forceDelete });
+  };
 
   return {
-    rewards,
+    rewards: data?.rewards || [],
     loading,
-    error,
+    error: error as Error | null,
     fetchRewards,
     addReward,
     updateReward,
-    deleteReward
+    deleteReward,
   };
-};
-
-export default useRewards;
+}

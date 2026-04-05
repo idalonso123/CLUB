@@ -1,7 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 
+/**
+ * Headers de seguridad
+ */
+const securityHeaders = {
+  'X-Frame-Options': 'SAMEORIGIN',
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'X-XSS-Protection': '1; mode=block',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+};
+
+/**
+ * Middleware principal de la aplicación
+ * Maneja autenticación, autorización y headers de seguridad
+ */
 export async function middleware(request: NextRequest) {
+  // Aplicar headers de seguridad a todas las respuestas
+  const response = NextResponse.next();
+  
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+  
+  // Rutas de autenticación
   const isAuthPage = 
     request.nextUrl.pathname === '/login' || 
     request.nextUrl.pathname === '/register' || 
@@ -16,17 +39,23 @@ export async function middleware(request: NextRequest) {
     loginUrl.searchParams.set('redirect', request.nextUrl.pathname);
   }
   
+  // Verificar JWT_SECRET
+  const JWT_SECRET = process.env.JWT_SECRET;
+  if (!JWT_SECRET) {
+    console.warn('JWT_SECRET no está configurado. Usando valor por defecto (NO RECOMENDADO para producción).');
+  }
+  
+  const secretKey = new TextEncoder().encode(JWT_SECRET || 'club-viveverde-secret-key');
+  
   if (token && isAuthPage) {
     try {
-      const JWT_SECRET = new TextEncoder().encode(
-        process.env.JWT_SECRET || 'club-viveverde-secret-key'
-      );
-      
-      const verifyResult = await jwtVerify(token, JWT_SECRET);
-      
+      await jwtVerify(token, secretKey);
       return NextResponse.redirect(dashboardUrl);
     } catch (error) {
-      // Token inválido - permitir acceso a la página de login
+      // Token inválido - limpiar cookie y permitir acceso a login
+      const response = NextResponse.redirect(loginUrl);
+      response.cookies.delete('auth_token');
+      return response;
     }
   }
   
@@ -36,53 +65,23 @@ export async function middleware(request: NextRequest) {
   
   if (token && !isAuthPage) {
     try {
-      const JWT_SECRET = new TextEncoder().encode(
-        process.env.JWT_SECRET || 'club-viveverde-secret-key'
-      );
-      
-      const { payload } = await jwtVerify(token, JWT_SECRET);
+      const { payload } = await jwtVerify(token, secretKey);
       const userRole = payload.role as string;
       const isAdmin = userRole === 'administrador' || userRole === 'admin';
       const isCajero = userRole === 'cajero';
       const isMarketing = userRole === 'marketing';
-      const isClient = !isAdmin && !isCajero && !isMarketing;
       
       // Redirigir desde /admin si no es administrador ni marketing
       if (request.nextUrl.pathname.startsWith('/admin') && 
-          userRole !== 'administrador' && userRole !== 'admin' && userRole !== 'marketing') {
+          !isAdmin && !isMarketing) {
         return NextResponse.redirect(dashboardUrl);
       }
       
       // Redirigir desde /teller si no es administrador ni cajero
       if (request.nextUrl.pathname.startsWith('/teller') && 
-          userRole !== 'administrador' && userRole !== 'admin' && userRole !== 'cajero') {
+          !isAdmin && !isCajero) {
         return NextResponse.redirect(dashboardUrl);
       }
-      
-      // Permitir que todos los usuarios (incluidos admin, cajero y marketing) accedan a /dashboard
-      // /dashboard es la página de perfil de usuario donde pueden editar sus datos personales
-      // Los redirects específicos están comentados para permitir acceso a /dashboard
-      /*
-      if (!isClient && (
-          request.nextUrl.pathname === '/dashboard' ||
-          request.nextUrl.pathname.startsWith('/dashboard') ||
-          request.nextUrl.pathname === '/puntos-fidelidad' ||
-          request.nextUrl.pathname.startsWith('/puntos-fidelidad') ||
-          request.nextUrl.pathname === '/carnets-mascotas' ||
-          request.nextUrl.pathname.startsWith('/carnets-mascotas') ||
-          request.nextUrl.pathname === '/rewards' ||
-          request.nextUrl.pathname.startsWith('/rewards')
-        )) {
-        // Redirigir según el rol
-        if (isAdmin) {
-          return NextResponse.redirect(new URL('/admin', request.url));
-        } else if (isCajero) {
-          return NextResponse.redirect(new URL('/teller', request.url));
-        } else if (isMarketing) {
-          return NextResponse.redirect(new URL('/marketing', request.url));
-        }
-      }
-      */
       
       // Si marketing intenta acceder a otras secciones del admin (no /marketing)
       if (isMarketing && 
@@ -90,13 +89,16 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/marketing', request.url));
       }
       
-      return NextResponse.next();
+      return response;
     } catch (error) {
-      return NextResponse.redirect(loginUrl);
+      // Token inválido o expirado - limpiar y redirigir a login
+      const response = NextResponse.redirect(loginUrl);
+      response.cookies.delete('auth_token');
+      return response;
     }
   }
   
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {

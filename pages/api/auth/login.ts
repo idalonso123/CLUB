@@ -3,8 +3,24 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import * as cookie from 'cookie';
 import executeQuery from '@/lib/db';
+import { loginRateLimit } from '@/middleware/rateLimit';
+
+/**
+ * Middleware de rate limiting para login
+ */
+function rateLimitMiddleware(req: NextApiRequest, res: NextApiResponse, next: () => void) {
+  return loginRateLimit(req, res, next);
+}
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Aplicar rate limiting
+  rateLimitMiddleware(req, res, () => {});
+  
+  // Verificar si el rate limit fue excedido
+  if (res.headersSent) {
+    return;
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Método no permitido' });
   }
@@ -17,6 +33,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(400).json({
         success: false,
         message: 'Email y contraseña son requeridos'
+      });
+    }
+    
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Formato de email inválido'
       });
     }
     
@@ -110,7 +135,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     
     // Generar token JWT
-    const JWT_SECRET = process.env.JWT_SECRET || 'club-viveverde-secret-key';
+    const JWT_SECRET = process.env.JWT_SECRET;
+    
+    // Verificar que JWT_SECRET esté configurado en producción
+    if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
+      console.error('JWT_SECRET no está configurado en producción');
+      return res.status(500).json({
+        success: false,
+        message: 'Error de configuración del servidor'
+      });
+    }
     
     const token = jwt.sign(
       { 
@@ -119,7 +153,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         role: user.rol,
         status: user.status // Incluir también esta info en el token
       },
-      JWT_SECRET,
+      JWT_SECRET || 'club-viveverde-secret-key',
       { expiresIn: '1d' } // 1 día de expiración
     );
     
@@ -138,13 +172,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     } catch (logError) {
       console.error('Error registrando inicio de sesión exitoso:', logError);
     }
-    
-    // Log para depuración
-    // console.log('[Login] User authenticated:', {
-    //   userId: user.codigo,
-    //   email: user.mail,
-    //   role: user.rol
-    // });
 
     // Retornar información del usuario autenticado con campos renombrados para mayor claridad
     return res.status(200).json({

@@ -3,7 +3,7 @@
   "author": "@Zeeroo - Adam Bravo Chergui",
   "author_website": "https://clubviveverde.com",
   "description": "Aplicación web para la gestión de usuarios y programas de fidelización.",
-  "version": "0.7.0",
+  "version": "0.10.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack -H 0.0.0.0 -p 3000",
@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@google-analytics/data": "^5.1.0",
+    "@tanstack/react-query": "^5.96.2",
     "@tiptap/extension-color": "^3.20.5",
     "@tiptap/extension-highlight": "^3.20.5",
     "@tiptap/extension-image": "^3.20.5",
