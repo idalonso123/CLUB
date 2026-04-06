@@ -569,16 +569,10 @@ const NavLinks: React.FC<NavLinksProps> = ({
         <motion.div className="mb-1">
           <motion.button
             onClick={() => {
-              // Guardar flag para indicar que vino del botón "Panel Administrativo"
-              if (typeof window !== 'undefined') {
-                sessionStorage.setItem('cameFromAdminButton', 'true');
+              // NO cerrar el menú, cambiar al submenú del Panel Administrativo
+              if (setIsInAdminMenu) {
+                setIsInAdminMenu(true);
               }
-              // Cerrar el menú móvil
-              if (closeMenu) {
-                closeMenu();
-              }
-              // Navegar al Panel Principal del admin
-              handleLinkClick("/admin/dashboard");
             }}
             className={`w-full text-left py-3 px-4 flex items-center transition-colors duration-200 ${getLinkClass("/admin")}`}
           >
