@@ -1,0 +1,17 @@
+{
+  "name": "tpv-installer",
+  "version": "1.0.0",
+  "description": "Instalador automático del sistema TPV Club ViveVerde",
+  "main": "index.js",
+  "scripts": {
+    "start": "node install.js"
+  },
+  "keywords": ["tpv", "electron", "clubviveverde"],
+  "author": "Club ViveVerde",
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^28.1.0",
+    "electron-builder": "^24.9.1",
+    "electron-log": "^5.0.3"
+  }
+}

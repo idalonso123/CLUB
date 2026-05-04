@@ -1,0 +1,151 @@
+@import "tailwindcss";
+
+/* =================================================================
+   ESTILOS GLOBALES BLOQUEADOS - CLUB VIVEVERDE
+   =================================================================
+   Estos estilos están diseñados para garantizar que el fondo y los
+   headers permanezcan constantes en TODAS las pantallas de la aplicación.
+   Se utilizan declaraciones !important para evitar overrides accidentales.
+   ================================================================= */
+
+/* Cuerpo base con fondo bloqueado */
+body {
+  background-color: white !important;
+}
+
+/* Contenedor principal con imagen de fondo bloqueada */
+.app-layout {
+  min-height: 100vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Header principal bloqueado (TopBar + Navbar) */
+.app-header {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+  /* Importante: Este z-index alto garantiza que el header
+     esté SIEMPRE por encima de cualquier otro elemento */
+}
+
+/* Barra superior (TopBar) - Información de contacto */
+.app-topbar {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  z-index: 99999 !important;
+  /* El z-index más alto asegura que TopBar esté siempre visible */
+}
+
+/* Barra de navegación (Navbar) - Menú principal */
+.app-navbar {
+  position: fixed !important;
+  top: 41px !important;
+  /* 41px es la altura de TopBar */
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  z-index: 9998 !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* En versión móvil, el Navbar debe estar pegado a la parte superior */
+@media (max-width: 767px) {
+  .app-navbar {
+    top: 0 !important;
+  }
+}
+
+/* Área de contenido principal con fondo bloqueado */
+.app-main-content {
+  flex-grow: 1 !important;
+  margin-top: 130px !important;
+  /* 130px = 41px (TopBar) + 89px (Navbar aproximadamente) */
+  background-image: url("/banner/footer.jpg") !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-attachment: fixed !important;
+  /* background-attachment: fixed asegura que el fondo no se desplace
+     con el contenido, permaneciendo siempre visible */
+  min-height: calc(100vh - 130px) !important;
+}
+
+/* En versión móvil, el contenido no tiene TopBar, solo Navbar */
+@media (max-width: 767px) {
+  .app-main-content {
+    margin-top: 89px !important;
+    /* 89px = solo la altura del Navbar */
+    min-height: calc(100vh - 89px) !important;
+  }
+}
+
+/* Contenedor del contenido de la página */
+.page-content-wrapper {
+  position: relative !important;
+  z-index: 1 !important;
+  background-color: transparent !important;
+}
+
+/* =================================================================
+   UTILIDADES DE BLOQUEO ADICIONALES
+   ================================================================= */
+
+/* Forzar que ningún elemento pueda estar por encima del header */
+.locked-header-element {
+  z-index: 9999 !important;
+  position: relative !important;
+}
+
+/* Prevenir que cualquier overlay o modal cubra el header sin intención */
+.header-protected {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Clases para asegurar que el contenido respete el espacio del header */
+.content-with-fixed-header {
+  padding-top: 130px !important;
+}
+
+/* Animaciones permitidas solo para elementos internos, no para headers */
+.header-animations {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* =================================================================
+   REGLAS DE SEGURIDAD PARA EVITAR OVERRIDES
+   ================================================================= */
+
+/* Bloquear cambios de posición del header mediante JavaScript inline */
+header {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  z-index: 9999 !important;
+}
+
+/* Asegurar que el body no tenga márgenes o paddings problemáticos */
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow-x: hidden !important;
+}
+
+/* Contenedor principal de Next.js */
+#__next {
+  position: relative !important;
+  min-height: 100vh !important;
+}
