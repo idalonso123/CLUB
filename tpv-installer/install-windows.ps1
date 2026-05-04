@@ -8,7 +8,7 @@
 #   - Clic derecho en el archivo -> "Ejecutar como administrador"
 # ==============================================================================
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 # ==============================================================================
 # CONFIGURACIÓN
@@ -29,10 +29,10 @@ function Write-ColorOutput {
     
     $colors = @{
         "success" = "Green"
-        "error" = "Red"
+        "error"   = "Red"
         "warning" = "Yellow"
-        "info" = "Cyan"
-        "title" = "Magenta"
+        "info"    = "Cyan"
+        "title"   = "Magenta"
     }
     
     $color = $colors[$Type] -replace "^$", "White"
@@ -61,6 +61,7 @@ if (-not $isAdmin) {
     $continue = Read-Host "¿Continuar de todas formas? (S/N)"
     if ($continue -ne "S") {
         Write-ColorOutput "Instalación cancelada." "error"
+        Read-Host "`nPresiona Enter para salir..."
         exit 1
     }
 }
@@ -106,12 +107,17 @@ if (-not $nodeVersion) {
         if ($nodeVersion) {
             Write-ColorOutput "[OK] Node.js instalado correctamente: $nodeVersion" "success"
         } else {
-            throw "Node.js no se instaló correctamente"
+            Write-ColorOutput "[ERROR] Node.js no se instaló correctamente." "error"
+            Write-ColorOutput "Error: $($_.Exception.Message)" "error"
+            Read-Host "`nPresiona Enter para salir..."
+            exit 1
         }
     } catch {
         Write-ColorOutput "[ERROR] No se pudo instalar Node.js automáticamente." "error"
         Write-ColorOutput "[INFO] Por favor, descarga e instala Node.js manualmente desde:" "info"
         Write-ColorOutput "   https://nodejs.org" "info"
+        Write-ColorOutput "Error: $($_.Exception.Message)" "error"
+        Read-Host "`nPresiona Enter para salir..."
         exit 1
     }
 }
@@ -122,6 +128,8 @@ try {
     Write-ColorOutput "[OK] npm encontrado: v$npmVersion" "success"
 } catch {
     Write-ColorOutput "[ERROR] npm no está disponible. Verifica la instalación de Node.js." "error"
+    Write-ColorOutput "Error: $($_.Exception.Message)" "error"
+    Read-Host "`nPresiona Enter para salir..."
     exit 1
 }
 
@@ -154,6 +162,8 @@ if (Test-Path $INSTALL_DIR) {
         git clone $REPO_URL .
     } catch {
         Write-ColorOutput "[ERROR] No se pudo clonar el repositorio. Verifica tu conexión a internet." "error"
+        Write-ColorOutput "Error: $($_.Exception.Message)" "error"
+        Read-Host "`nPresiona Enter para salir..."
         exit 1
     }
 }
@@ -177,6 +187,8 @@ try {
     }
 } catch {
     Write-ColorOutput "[ERROR] Error al instalar dependencias base." "error"
+    Write-ColorOutput "Error: $($_.Exception.Message)" "error"
+    Read-Host "`nPresiona Enter para salir..."
     exit 1
 }
 
@@ -191,6 +203,8 @@ try {
     }
 } catch {
     Write-ColorOutput "[ERROR] Error al instalar Electron." "error"
+    Write-ColorOutput "Error: $($_.Exception.Message)" "error"
+    Read-Host "`nPresiona Enter para salir..."
     exit 1
 }
 

@@ -119,8 +119,8 @@ const TPVSetup: React.FC<TPVSetupProps> = ({ onSetupComplete }) => {
   }, []);
 
   /**
-   * Descarga el script de instalación
-   */
+ * Descarga el script de instalación
+ */
   const downloadInstallerScript = async () => {
     try {
       setIsInstalling(true);
@@ -147,8 +147,24 @@ const TPVSetup: React.FC<TPVSetupProps> = ({ onSetupComplete }) => {
       document.body.removeChild(a);
 
       setInstallProgress(100);
-      setInstallMessage("Descarga completada. Ejecuta el archivo como Administrador.");
+      setInstallMessage("Descarga completada");
       setIsInstalling(false);
+
+      // Mostrar instrucciones adicionales después de la descarga
+      setTimeout(() => {
+        alert(
+          "Script descargado correctamente.\n\n" +
+          "IMPORTANTE - Cómo ejecutar el script:\n\n" +
+          "1. Cierra este mensaje\n" +
+          "2. Busca el archivo 'install-tpv-windows.ps1' en tu carpeta de descargas\n" +
+          "3. Haz clic derecho sobre el archivo\n" +
+          "4. Selecciona 'Ejecutar con PowerShell' o 'Run with PowerShell'\n" +
+          "5. Si aparece una advertencia, presiona 'Sí' o 'Abrir'\n\n" +
+          "NOTA: Si el script se cierra automáticamente, significa que hubo un error.\n" +
+          "Para ver el error, busca 'PowerShell' en el menú inicio, ábrelo,\n" +
+          "y ejecuta: .\\install-tpv-windows.ps1"
+        );
+      }, 500);
 
     } catch (err: any) {
       setError(err.message || "Error al descargar el instalador");
